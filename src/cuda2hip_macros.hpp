@@ -82,11 +82,18 @@
     #define CUDA_R_16BF HIPBLAS_R_16B
     #define CUDA_R_32I HIPBLAS_R_32I
     #define CUDA_R_8I HIPBLAS_R_8I
-    // Compute types for ROCm 7.x
-    #define CUDA_COMPUTE_16F HIPBLAS_COMPUTE_16F
-    #define CUDA_COMPUTE_32F HIPBLAS_COMPUTE_32F
-    #define CUDA_COMPUTE_32I HIPBLAS_COMPUTE_32I
-    #define cudaComputeType_t hipblasComputeType_t
+    // Compute types - version dependent
+    #if HIP_VERSION >= 60000000  // ROCm 7.0+
+        #define CUDA_COMPUTE_16F HIPBLAS_COMPUTE_16F
+        #define CUDA_COMPUTE_32F HIPBLAS_COMPUTE_32F
+        #define CUDA_COMPUTE_32I HIPBLAS_COMPUTE_32I
+        #define cudaComputeType_t hipblasComputeType_t
+    #else  // ROCm 6.x and earlier
+        #define CUDA_COMPUTE_16F HIPBLAS_R_16F
+        #define CUDA_COMPUTE_32F HIPBLAS_R_32F
+        #define CUDA_COMPUTE_32I HIPBLAS_R_32I
+        #define cudaComputeType_t hipblasDatatype_t
+    #endif
     #define CUBLAS_STATUS_NOT_INITIALIZED HIPBLAS_STATUS_NOT_INITIALIZED
     #define CUBLAS_STATUS_ALLOC_FAILED HIPBLAS_STATUS_ALLOC_FAILED
     #define CUBLAS_STATUS_INVALID_VALUE HIPBLAS_STATUS_INVALID_VALUE

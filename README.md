@@ -2,26 +2,36 @@
 
 # CTranslate2
 
-## ROCm 7.x Support
+## ROCm 6.2+ and 7.x Support
 
-This fork includes compatibility fixes for ROCm 7.0+ based on the official [ROCm/CTranslate2](https://github.com/ROCm/CTranslate2) repository. The original AMD fork targets ROCm 6.1, but significant API changes in ROCm 7.0+ required additional modifications.
+This fork includes compatibility fixes for ROCm 6.2+ and 7.x based on the official [ROCm/CTranslate2](https://github.com/ROCm/CTranslate2) repository. The original AMD fork targets ROCm 6.1, but significant API changes in ROCm 7.0+ required modifications.
 
-### Changes for ROCm 7.0+
+### Changes for ROCm 6.2+ / 7.x Compatibility
 
-The hipBLAS API changed between ROCm 6.x and 7.x, requiring the following fixes:
+The hipBLAS API changed between ROCm 6.x and 7.x. This fork includes **automatic version detection** to support both:
 
-1. **Type compatibility**: Changed `hipblasDatatype_t` to `hipDataType` in HIP macro definitions
-2. **Compute type mappings**: Added `CUDA_COMPUTE_16F`, `CUDA_COMPUTE_32F`, `CUDA_COMPUTE_32I` for `hipblasComputeType_t`
-3. **GEMM calls**: Updated all `hipblasGemmEx` and `hipblasGemmStridedBatchedEx` calls to use compute types instead of data types
+**ROCm 6.2 - 6.x:**
+- Uses `hipblasDatatype_t` for compute types
+- Maps `CUDA_COMPUTE_*` to `HIPBLAS_R_*` (data types)
+
+**ROCm 7.0+:**
+- Uses `hipblasComputeType_t` for compute types
+- Maps `CUDA_COMPUTE_*` to `HIPBLAS_COMPUTE_*` (compute types)
+
+The version detection is done at compile time using `HIP_VERSION` macro, ensuring seamless compatibility across ROCm versions.
 
 ### Modified Files
 
-- `src/cuda2hip_macros.hpp`: Type definitions and compute type mappings
-- `src/cuda/primitives.cu`: GEMM function calls updated for ROCm 7.x API
+- `src/cuda2hip_macros.hpp`: Conditional type definitions based on ROCm version
 
-### Tested Configuration
+### Tested Configurations
 
-- ROCm Version: 7.0.1
+**ROCm 6.2.4:**
+- GPU: AMD Radeon RX 7900 XT (gfx1100)
+- Python: 3.12
+- Build Type: Release with HIP support
+
+**ROCm 7.0.1:**
 - GPU: AMD Radeon RX 7900 XT (gfx1100)
 - Python: 3.12
 - Build Type: Release with HIP support
@@ -60,7 +70,7 @@ Replace `gfx1100` with your GPU architecture (`gfx90a`, `gfx942`, `gfx1030`, etc
 
 ### Pre-built Wheels
 
-Pre-compiled Python wheels for ROCm 7.0.1 are available in the [Releases](https://github.com/dapovoa/CTranslate2/releases) section.
+Pre-compiled Python wheels for ROCm 6.2.4 and 7.0.1 are available in the [Releases](https://github.com/dapovoa/CTranslate2/releases) section.
 
 ---
 
