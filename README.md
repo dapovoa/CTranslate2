@@ -31,6 +31,13 @@ The version detection is done at compile time using `HIP_VERSION` macro, ensurin
 - Python: 3.12
 - Build Type: Release with HIP support
 
+**ROCm 6.3.0:**
+- GPU: AMD Radeon RX 7900 XTX (gfx1100)
+- Driver: amdgpu 6.14.14
+- Python: 3.12
+- PyTorch: 2.7.0+rocm6.3
+- Build Type: Release with HIP support
+
 **ROCm 7.0.1:**
 - GPU: AMD Radeon RX 7900 XT (gfx1100)
 - Python: 3.12
@@ -70,7 +77,7 @@ Replace `gfx1100` with your GPU architecture (`gfx90a`, `gfx942`, `gfx1030`, etc
 
 ### Pre-built Wheels
 
-Pre-compiled Python wheels for ROCm 6.2.4 and 7.0.1 are available in the [Releases](https://github.com/dapovoa/CTranslate2/releases) section.
+Pre-compiled Python wheels for ROCm 6.2.4, 6.3, and 7.0.1 are available in the [Releases](https://github.com/dapovoa/CTranslate2/releases) section.
 
 ---
 
