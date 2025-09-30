@@ -2,6 +2,68 @@
 
 # CTranslate2
 
+## ROCm 7.x Support
+
+This fork includes compatibility fixes for ROCm 7.0+ based on the official [ROCm/CTranslate2](https://github.com/ROCm/CTranslate2) repository. The original AMD fork targets ROCm 6.1, but significant API changes in ROCm 7.0+ required additional modifications.
+
+### Changes for ROCm 7.0+
+
+The hipBLAS API changed between ROCm 6.x and 7.x, requiring the following fixes:
+
+1. **Type compatibility**: Changed `hipblasDatatype_t` to `hipDataType` in HIP macro definitions
+2. **Compute type mappings**: Added `CUDA_COMPUTE_16F`, `CUDA_COMPUTE_32F`, `CUDA_COMPUTE_32I` for `hipblasComputeType_t`
+3. **GEMM calls**: Updated all `hipblasGemmEx` and `hipblasGemmStridedBatchedEx` calls to use compute types instead of data types
+
+### Modified Files
+
+- `src/cuda2hip_macros.hpp`: Type definitions and compute type mappings
+- `src/cuda/primitives.cu`: GEMM function calls updated for ROCm 7.x API
+
+### Tested Configuration
+
+- ROCm Version: 7.0.1
+- GPU: AMD Radeon RX 7900 XT (gfx1100)
+- Python: 3.12
+- Build Type: Release with HIP support
+
+### Building from Source
+
+```bash
+git clone --branch amd_dev --recursive https://github.com/dapovoa/CTranslate2.git
+cd CTranslate2
+mkdir build && cd build
+
+cmake -DCMAKE_PREFIX_PATH="/opt/rocm" \
+      -DCMAKE_INSTALL_PREFIX=/usr/local \
+      -DWITH_CUDA=ON \
+      -DWITH_CUDNN=ON \
+      -DWITH_MKL=OFF \
+      -DWITH_DNNL=OFF \
+      -DWITH_OPENBLAS=OFF \
+      -DOPENMP_RUNTIME=COMP \
+      -DCMAKE_HIP_ARCHITECTURES="gfx1100" \
+      -DGPU_TARGETS="gfx1100" \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DGPU_RUNTIME=HIP \
+      -DENABLE_CPU_DISPATCH=OFF \
+      -DCMAKE_CXX_FLAGS="-O3" ..
+
+make -j$(nproc) install
+
+# Build Python wheel
+cd ../python
+pip install pybind11 wheel
+python setup.py bdist_wheel
+```
+
+Replace `gfx1100` with your GPU architecture (`gfx90a`, `gfx942`, `gfx1030`, etc.).
+
+### Pre-built Wheels
+
+Pre-compiled Python wheels for ROCm 7.0.1 are available in the [Releases](https://github.com/dapovoa/CTranslate2/releases) section.
+
+---
+
 CTranslate2 is a C++ and Python library for efficient inference with Transformer models.
 
 The project implements a custom runtime that applies many performance optimization techniques such as weights quantization, layers fusion, batch reordering, etc., to [accelerate and reduce the memory usage](#benchmarks) of Transformer models on CPU and GPU.
