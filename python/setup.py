@@ -41,13 +41,37 @@ def _maybe_add_library_root(lib_name):
 
 _maybe_add_library_root("CTRANSLATE2")
 
+# Detect ROCm installation
+def _detect_rocm():
+    """Detect if ROCm is installed and return the path."""
+    rocm_paths = ["/opt/rocm", "/opt/rocm-6.3.0", "/opt/rocm-6.2.0"]
+    for path in rocm_paths:
+        if os.path.exists(os.path.join(path, "lib", "libMIOpen.so")):
+            return path
+    return None
+
+rocm_path = _detect_rocm()
+
 cflags = ["-std=c++17", "-fvisibility=hidden"]
 ldflags = []
+libraries = ["ctranslate2"]
 package_data = {}
+
 if sys.platform == "darwin":
     # std::visit requires macOS 10.14
     cflags.append("-mmacosx-version-min=10.14")
     ldflags.append("-Wl,-rpath,/usr/local/lib")
+elif sys.platform == "linux":
+    # Auto-detect and configure ROCm libraries
+    if rocm_path:
+        print(f"ROCm detected at: {rocm_path}")
+        rocm_lib = os.path.join(rocm_path, "lib")
+        library_dirs.append(rocm_lib)
+        ldflags.append(f"-Wl,-rpath,{rocm_lib}")
+        # Add ROCm libraries for GPU support
+        libraries.extend(["MIOpen", "hipblas"])
+    else:
+        print("Warning: ROCm not detected. Building CPU-only version.")
 elif sys.platform == "win32":
     cflags = ["/std:c++17", "/d2FH4-"]
     package_data["ctranslate2"] = ["*.dll"]
@@ -59,7 +83,7 @@ ctranslate2_module = Extension(
     extra_link_args=ldflags,
     include_dirs=include_dirs,
     library_dirs=library_dirs,
-    libraries=["ctranslate2"],
+    libraries=libraries,
 )
 
 ParallelCompile("CMAKE_BUILD_PARALLEL_LEVEL").install()

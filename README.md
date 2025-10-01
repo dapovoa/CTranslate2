@@ -6,6 +6,18 @@
 
 This fork includes compatibility fixes for ROCm 6.2+ and 7.x based on the official [ROCm/CTranslate2](https://github.com/ROCm/CTranslate2) repository. The original AMD fork targets ROCm 6.1, but significant API changes in ROCm 7.0+ required modifications.
 
+### MIOpen Support for Whisper Models
+
+Added proper MIOpen linkage for Conv1D operations, required for Whisper and other speech models. Previous builds would fail with "Conv1D on GPU currently requires the cuDNN library" error.
+
+**What's Fixed:**
+- Automatic MIOpen detection and linkage in Python setup.py
+- Proper rpath configuration for ROCm libraries
+- Whisper models now work correctly on AMD GPUs
+- Automated build script with verification (build_rocm.sh)
+
+See [BUILD_ROCM.md](BUILD_ROCM.md) for detailed build instructions.
+
 ### Changes for ROCm 6.2+ / 7.x Compatibility
 
 The hipBLAS API changed between ROCm 6.x and 7.x. This fork includes **automatic version detection** to support both:
