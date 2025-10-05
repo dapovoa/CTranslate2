@@ -2,16 +2,22 @@
 
 #include <string>
 
-#include <cuda_runtime.h>
-#include <cublas_v2.h>
+#ifdef __HIP_PLATFORM_AMD__
+  #include <hip/hip_runtime.h>
+  #include <hipblas/hipblas.h>
+  #include <cuda2hip_macros.hpp>
+#else
+  #include <cuda_runtime.h>
+  #include <cublas_v2.h>
+#endif
 #include <thrust/execution_policy.h>
 
-#ifdef CT2_WITH_TENSOR_PARALLEL
-#  include <cuda/mpi_stub.h>
-#  include <nccl.h>
-#endif
 #ifdef CT2_WITH_CUDNN
-#  include <cudnn.h>
+    #ifdef __HIP_PLATFORM_AMD__
+        #include <miopen/miopen.h>
+    #else
+        #include <cudnn.h>
+    #endif
 #endif
 
 #include "ctranslate2/types.h"
@@ -19,24 +25,6 @@
 
 namespace ctranslate2 {
   namespace cuda {
-
-#ifdef CT2_WITH_TENSOR_PARALLEL
-#define MPI_CHECK(ans)                                                  \
-  {                                                                     \
-    int e = ans;                                                        \
-    if( e != MPI_SUCCESS )                                              \
-      THROW_RUNTIME_ERROR("MPI failed with error "                      \
-                          + std::to_string(e));                         \
-  }
-
-#define NCCL_CHECK(ans)                                                 \
-  {                                                                     \
-    ncclResult_t r = ans;                                               \
-    if( r != ncclSuccess )                                              \
-      THROW_RUNTIME_ERROR("NCCL failed with error "                     \
-                          + std::to_string(r));                         \
-  }
-#endif
 
 #define CUDA_CHECK(ans)                                                 \
     {                                                                   \
@@ -60,12 +48,6 @@ namespace ctranslate2 {
       if (status != CUDNN_STATUS_SUCCESS)                               \
         THROW_RUNTIME_ERROR("cuDNN failed with status "                 \
                             + std::string(cudnnGetErrorString(status))); \
-    }
-
-#define TENSOR_CHECK(ans, message)                                      \
-    {                                                                   \
-      if (!ans)                                                 \
-        THROW_RUNTIME_ERROR(message);                                   \
     }
 
     const char* cublasGetStatusName(cublasStatus_t status);
@@ -107,7 +89,10 @@ namespace ctranslate2 {
     };
 
 // Convenience macro to call Thrust functions with a default execution policy.
-#define THRUST_CALL(FUN, ...) FUN(thrust::cuda::par_nosync.on(ctranslate2::cuda::get_cuda_stream()), __VA_ARGS__)
-
+#ifdef __HIP_PLATFORM_AMD__
+  #define THRUST_CALL(FUN, ...) FUN(thrust::hip::par_nosync.on(ctranslate2::cuda::get_cuda_stream()), __VA_ARGS__)
+#else
+  #define THRUST_CALL(FUN, ...) FUN(thrust::cuda::par_nosync.on(ctranslate2::cuda::get_cuda_stream()), __VA_ARGS__)
+#endif
   }
 }

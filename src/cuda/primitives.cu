@@ -1,7 +1,11 @@
 #include "ctranslate2/primitives.h"
-
-#include <cuda_runtime.h>
-#include <cublas_v2.h>
+#ifndef __HIP_PLATFORM_AMD__
+  #include <cuda_runtime.h>
+  #include <cublas_v2.h>
+#else
+    #include <hip/hip_runtime.h>
+    #include <hipblas/hipblas.h>
+#endif
 #include <thrust/device_ptr.h>
 
 #include "cuda/helpers.h"
@@ -220,12 +224,6 @@ namespace ctranslate2 {
 
   template<>
   template <typename T>
-  void primitives<Device::CUDA>::sigmoid(const T* x, T* y, dim_t size) {
-    cuda::unary_transform(x, y, size, cuda::sigmoid_func<cuda::device_type<T>>());
-  }
-
-  template<>
-  template <typename T>
   void primitives<Device::CUDA>::swish(const T* x, T* y, dim_t size) {
     cuda::unary_transform(x, y, size, cuda::swish_func<cuda::device_type<T>>());
   }
@@ -246,7 +244,11 @@ namespace ctranslate2 {
   };
 
   template <typename T>
-  __global__ void penalize_previous_tokens_kernel(T* scores,
+  __global__ void 
+#ifdef __HIP_PLATFORM_AMD__  
+  __launch_bounds__(64)
+#endif  
+  penalize_previous_tokens_kernel(T* scores,
                                                   const T* previous_scores,
                                                   const int32_t* previous_ids,
                                                   float penalty,
@@ -271,7 +273,11 @@ namespace ctranslate2 {
                                                           dim_t batch_size,
                                                           dim_t length,
                                                           dim_t vocabulary_size) {
+#ifndef __HIP_PLATFORM_AMD__	  
     dim3 block(32);
+#else
+    dim3 block(64);
+#endif     
     dim3 grid((batch_size * length + block.x - 1) / block.x);
     penalize_previous_tokens_kernel<<<grid, block, 0, cuda::get_cuda_stream()>>>(
       cuda::device_cast(scores),
@@ -484,12 +490,12 @@ namespace ctranslate2 {
 
     const void* alpha_ptr = &alpha_h;
     const void* beta_ptr = &beta_h;
-    cudaDataType_t compute_type = CUDA_R_16F;
+    cudaComputeType_t compute_type = CUDA_COMPUTE_16F;
 
     if (!cuda::use_true_fp16_gemm()) {
       alpha_ptr = &alpha;
       beta_ptr = &beta;
-      compute_type = CUDA_R_32F;
+      compute_type = CUDA_COMPUTE_32F;
     }
 
     // cuBLAS assumes column-major storage, so swap a and b accordingly.
@@ -527,7 +533,7 @@ namespace ctranslate2 {
                               a, CUDA_R_16BF, lda,
                               &beta,
                               c, CUDA_R_16BF, ldc,
-                              CUDA_R_32F,
+                              CUDA_COMPUTE_32F,
                               CUBLAS_GEMM_DEFAULT_TENSOR_OP));
   }
 
@@ -555,7 +561,7 @@ namespace ctranslate2 {
                               a, CUDA_R_8I, lda,
                               &beta_i,
                               c, CUDA_R_32I, ldc,
-                              CUDA_R_32I,
+                              CUDA_COMPUTE_32I,
                               CUBLAS_GEMM_DEFAULT_TENSOR_OP));
   }
 
@@ -597,12 +603,12 @@ namespace ctranslate2 {
 
     const void* alpha_ptr = &alpha_h;
     const void* beta_ptr = &beta_h;
-    cudaDataType_t compute_type = CUDA_R_16F;
+    cudaComputeType_t compute_type = CUDA_COMPUTE_16F;
 
     if (!cuda::use_true_fp16_gemm()) {
       alpha_ptr = &alpha;
       beta_ptr = &beta;
-      compute_type = CUDA_R_32F;
+      compute_type = CUDA_COMPUTE_32F;
     }
 
     // cuBLAS assumes column-major storage, so swap a and b accordingly.
@@ -641,7 +647,7 @@ namespace ctranslate2 {
                                             &beta,
                                             c, CUDA_R_16BF, ldc, stridec,
                                             batch_size,
-                                            CUDA_R_32F,
+                                            CUDA_COMPUTE_32F,
                                             CUBLAS_GEMM_DEFAULT_TENSOR_OP));
   }
 
@@ -795,7 +801,6 @@ namespace ctranslate2 {
   template void primitives<Device::CUDA>::gelu(const T*, T*, dim_t);    \
   template void primitives<Device::CUDA>::gelu_tanh(const T*, T*, dim_t); \
   template void primitives<Device::CUDA>::gelu_sigmoid(const T*, T*, dim_t); \
-  template void primitives<Device::CUDA>::sigmoid(const T*, T*, dim_t);   \
   template void primitives<Device::CUDA>::swish(const T*, T*, dim_t);   \
   template float primitives<Device::CUDA>::logsumexp(const T*, dim_t);  \
   template void primitives<Device::CUDA>::sin(const T*, T*, dim_t);     \

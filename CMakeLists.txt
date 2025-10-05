@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
 
 # Set policy for setting the MSVC runtime library for static MSVC builds
 if(POLICY CMP0091)
@@ -20,8 +20,6 @@ option(ENABLE_PROFILING "Compile with profiling support" OFF)
 option(BUILD_CLI "Compile the clients" ON)
 option(BUILD_TESTS "Compile the tests" OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
-option(WITH_TENSOR_PARALLEL "Compile with NCCL and MPI backend" OFF)
-option(WITH_FLASH_ATTN "Compile with Flash Attention 2" OFF)
 
 if(ENABLE_PROFILING)
   message(STATUS "Enable profiling support")
@@ -33,12 +31,7 @@ if(DEFINED ENV{INTELROOT})
 elseif(DEFINED ENV{ONEAPI_ROOT})
   set(INTEL_ROOT_DEFAULT $ENV{ONEAPI_ROOT}/..)
 elseif(DEFINED ENV{MKLROOT})
-  if(WIN32)
-    set(INTEL_ROOT_DEFAULT $ENV{MKLROOT}/..)
-  else()
-    # Other system like arch set env MKLROOT by default
-    set(INTEL_ROOT_DEFAULT $ENV{MKLROOT}/../../..)
-  endif()
+  set(INTEL_ROOT_DEFAULT $ENV{MKLROOT}/..)
 elseif(WIN32)
   set(ProgramFilesx86 "ProgramFiles(x86)")
   set(INTEL_ROOT_DEFAULT PATHS
@@ -49,12 +42,12 @@ else()
 endif()
 set(INTEL_ROOT ${INTEL_ROOT_DEFAULT} CACHE FILEPATH "Path to Intel root directory")
 set(OPENMP_RUNTIME "INTEL" CACHE STRING "OpenMP runtime (INTEL, COMP, NONE)")
-
+set_property(CACHE OPENMP_RUNTIME PROPERTY STRINGS INTEL COMP NONE)
 # Set Release build type by default to get sane performance.
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
-
+set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo MinSizeRel)
 # Set CXX flags.
 set(CMAKE_CXX_STANDARD 17)
 
@@ -80,7 +73,6 @@ string(REPLACE "." ";" CTRANSLATE2_VERSION_LIST ${CTRANSLATE2_VERSION})
 list(GET CTRANSLATE2_VERSION_LIST 0 CTRANSLATE2_MAJOR_VERSION)
 
 if(MSVC)
-  add_compile_definitions(_USE_MATH_DEFINES) # required for M_PI
   if(BUILD_SHARED_LIBS)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
   else()
@@ -92,9 +84,6 @@ if(MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /d2FH4-")
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
-  if(NOT APPLE AND NOT WIN32)
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,noexecstack")
-  endif()
 endif()
 
 find_package(Threads)
@@ -117,7 +106,7 @@ set(SOURCES
   src/cpu/primitives.cc
   src/decoding.cc
   src/decoding_utils.cc
-  src/devices.cc
+  #src/devices.cc
   src/dtw.cc
   src/encoder.cc
   src/env.cc
@@ -134,14 +123,14 @@ set(SOURCES
   src/layers/whisper.cc
   src/logging.cc
   src/models/language_model.cc
-  src/models/model.cc
+  #src/models/model.cc
   src/models/model_factory.cc
   src/models/model_reader.cc
   src/models/sequence_to_sequence.cc
   src/models/transformer.cc
-  src/models/wav2vec2.cc
   src/models/wav2vec2bert.cc
-  src/models/whisper.cc
+  #src/models/wav2vec2.cc
+  #src/models/whisper.cc
   src/ops/activation.cc
   src/ops/add.cc
   src/ops/alibi_add.cc
@@ -187,7 +176,6 @@ set(SOURCES
   src/ops/split.cc
   src/ops/slide.cc
   src/ops/sub.cc
-  src/ops/sigmoid.cc
   src/ops/swish.cc
   src/ops/tanh.cc
   src/ops/tile.cc
@@ -211,14 +199,14 @@ set(SOURCES
   src/random.cc
   src/sampling.cc
   src/scoring.cc
-  src/storage_view.cc
+  #src/storage_view.cc
   src/thread_pool.cc
   src/translator.cc
-  src/types.cc
-  src/utils.cc
+  #src/types.cc
+  #src/utils.cc
   src/vocabulary.cc
   src/vocabulary_map.cc
-)
+  )
 set(LIBRARIES
   ${CMAKE_THREAD_LIBS_INIT}
   spdlog::spdlog_header_only
@@ -332,7 +320,7 @@ if(WITH_MKL)
   endif()
 
   # Find MKL libraries.
-  find_library(MKL_CORE_LIBRARY NAMES mkl_core HINTS ${MKL_ROOT}/lib ${MKL_ROOT}/lib/intel64)
+  find_library(MKL_CORE_LIBRARY NAMES mkl_core PATHS ${MKL_ROOT}/lib ${MKL_ROOT}/lib/intel64)
   if(MKL_CORE_LIBRARY)
     get_filename_component(MKL_LIBRARY_DIR ${MKL_CORE_LIBRARY} DIRECTORY)
     message(STATUS "Found MKL library directory: ${MKL_LIBRARY_DIR}")
@@ -443,36 +431,104 @@ if (WITH_RUY)
   unset(CMAKE_POSITION_INDEPENDENT_CODE)
   list(APPEND LIBRARIES ruy)
 endif()
+set(GPU_RUNTIME "HIP" CACHE STRING "GPU_RUNTIME (HIP and CUDA)")
+set_property(CACHE GPU_RUNTIME PROPERTY STRINGS CUDA HIP)
+if(WIN32)
+    set(ROCM_ROOT "$ENV{HIP_PATH}" CACHE PATH "Root directory of the ROCm installation")
+else()
+   if (NOT DEFINED ROCM_PATH )
+      if (NOT DEFINED ENV{ROCM_PATH} )
+        set(ROCM_PATH "/opt/rocm" CACHE PATH "Root directory of the ROCm installation")
+      else()
+        set(ROCM_PATH $ENV{ROCM_PATH} CACHE PATH "Root directory of the ROCm installation")
+      endif()
+   endif()
+    set(CMAKE_MODULE_PATH ${ROCM_PATH}/lib/cmake)
+endif()
 
 if (WITH_CUDA)
-  find_package(CUDA 11.0 REQUIRED)
-  list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-  if (WITH_TENSOR_PARALLEL)
-    find_package(MPI REQUIRED)
-    find_package(NCCL REQUIRED)
-    include_directories(${NCCL_INCLUDE_DIR})
-    include_directories(${MPI_INCLUDE_PATH})
-    if(CUDA_DYNAMIC_LOADING)
-      list(APPEND SOURCES src/cuda/mpi_stub.cc)
-      list(APPEND SOURCES src/cuda/nccl_stub.cc)
-      add_definitions(-DCT2_WITH_CUDA_DYNAMIC_LOADING)
-    else ()
-      list(APPEND LIBRARIES ${NCCL_LIBRARY})
-      list(APPEND LIBRARIES ${MPI_LIBRARIES})
-    endif ()
-    add_definitions(-DCT2_WITH_TENSOR_PARALLEL)
-  endif ()
-  include_directories(${CUDA_TOOLKIT_ROOT_DIR}/include)
-
+  set(GPU_SOURCES
+    src/cuda/allocator.cc
+    src/cuda/primitives.cu
+    src/cuda/random.cu
+    src/cuda/utils.cc
+    src/ops/alibi_add_gpu.cu
+    src/ops/bias_add_gpu.cu
+    src/ops/concat_split_slide_gpu.cu
+    src/ops/conv1d_gpu.cu
+    src/ops/dequantize_gpu.cu
+    src/ops/flash_attention_gpu.cu
+    src/ops/gather_gpu.cu
+    src/ops/gumbel_max_gpu.cu
+    src/ops/layer_norm_gpu.cu
+    src/ops/mean_gpu.cu
+    src/ops/multinomial_gpu.cu
+    src/ops/rms_norm_gpu.cu
+    src/ops/rotary_gpu.cu
+    src/ops/softmax_gpu.cu
+    src/ops/tile_gpu.cu
+    src/ops/topk_gpu.cu
+    src/ops/topp_mask_gpu.cu
+    src/ops/quantize_gpu.cu
+    src/ops/nccl_ops_gpu.cu
+    src/ops/awq/gemm_gpu.cu
+    src/ops/awq/gemv_gpu.cu
+    src/ops/awq/dequantize_gpu.cu
+    )
   add_definitions(-DCT2_WITH_CUDA)
+  list(APPEND GPU_SOURCES
+ 	src/devices.cc
+	src/types.cc
+        src/storage_view.cc
+        src/utils.cc
+        src/models/model.cc
+        src/models/wav2vec2.cc
+        src/models/wav2vec2bert.cc
+        src/models/whisper.cc
+      )
+  if(GPU_RUNTIME STREQUAL "HIP")
+    enable_language(${GPU_RUNTIME})
+    set(CMAKE_${GPU_RUNTIME}_STANDARD 17)
+    set(CMAKE_${GPU_RUNTIME}_EXTENSIONS OFF)
+    set(CMAKE_${GPU_RUNTIME}_STANDARD_REQUIRED ON)
+    add_definitions(-D__HIP_PLATFORM_AMD__)
+    find_package(hipblas REQUIRED)
+    find_package(hip REQUIRED)
+
+    if(WITH_CUDNN)
+        find_package(miopen REQUIRED)
+        add_definitions(-DCT2_WITH_CUDNN)
+    endif()
+ #    list(APPEND GPU_SOURCES   src/devices.cc src/types.cc src/utils.cc src/models/model.cc src/models/whisper.cc)
+    add_library(${PROJECT_NAME} SHARED
+    ${SOURCES}
+    ${GPU_SOURCES}
+    )
+    set_source_files_properties(${GPU_SOURCES} PROPERTIES LANGUAGE ${GPU_RUNTIME})
+    set_source_files_properties(${SOURCES}  PROPERTIES LANGUAGE CXX)
+    target_link_libraries(${PROJECT_NAME} PUBLIC roc::hipblas)
+    if(WITH_CUDNN)
+            #       find_library(LIBRT NAMES "librt.so.1" PATHS  /lib/x86_64-linux-gnu/ NO_DEFAULT_PATH )
+            find_package(miopen REQUIRED)
+            find_library(LIBRT rt)
+      if(LIBRT)
+              message(STATUS "Librt: " ${LIBRT})
+              target_link_libraries(${PROJECT_NAME} PUBLIC MIOpen ${LIBRT} )
+      else()
+         target_link_libraries(${PROJECT_NAME} PUBLIC MIOpen )
+      endif()
+    endif()
+  else()
+    find_package(CUDA 11.0 REQUIRED)
   if(MSVC)
     if(BUILD_SHARED_LIBS)
       list(APPEND CUDA_NVCC_FLAGS "-Xcompiler=/MD$<$<CONFIG:Debug>:d>")
     else()
       list(APPEND CUDA_NVCC_FLAGS "-Xcompiler=/MT$<$<CONFIG:Debug>:d>")
     endif()
+  else()
+    list(APPEND CUDA_NVCC_FLAGS "-std=c++17")
   endif()
-  list(APPEND CUDA_NVCC_FLAGS "-std=c++17")
   if(OpenMP_CXX_FOUND)
     list(APPEND CUDA_NVCC_FLAGS "-Xcompiler=${OpenMP_CXX_FLAGS}")
   endif()
@@ -492,12 +548,6 @@ if (WITH_CUDA)
   list(APPEND CUDA_NVCC_FLAGS ${ARCH_FLAGS})
   set(CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER})
 
-  # flags for flash attention
-  if (WITH_FLASH_ATTN)
-    list(APPEND CUDA_NVCC_FLAGS "--expt-relaxed-constexpr")
-    list(APPEND CUDA_NVCC_FLAGS "--expt-extended-lambda")
-  endif()
-
   message(STATUS "NVCC host compiler: ${CUDA_HOST_COMPILER}")
   message(STATUS "NVCC compilation flags: ${CUDA_NVCC_FLAGS}")
 
@@ -510,12 +560,6 @@ if (WITH_CUDA)
     )
   cuda_include_directories(${THRUST_INCLUDE_DIRS})
   list(APPEND PRIVATE_INCLUDE_DIRECTORIES ${THRUST_INCLUDE_DIRS})
-
-  set(CUTLASS_INCLUDE_DIRS
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cutlass/include
-  )
-  cuda_include_directories(${CUTLASS_INCLUDE_DIRS})
-  list(APPEND PRIVATE_INCLUDE_DIRECTORIES ${CUTLASS_INCLUDE_DIRS})
 
   if(WITH_CUDNN)
     # Find cuDNN includes.
@@ -554,113 +598,24 @@ if (WITH_CUDA)
   else()
     list(APPEND LIBRARIES ${CUDA_CUBLAS_LIBRARIES})
   endif()
-  if (WITH_FLASH_ATTN)
-    add_definitions(-DCT2_WITH_FLASH_ATTN)
-    list(APPEND SOURCES
-      src/ops/flash-attention/flash_fwd_hdim32_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim32_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim64_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim64_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim96_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim96_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim128_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim128_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim160_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim160_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim192_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim192_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim224_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim224_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim256_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim256_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim32_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim32_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim64_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim64_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim96_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim96_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim128_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim128_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim160_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim160_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim192_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim192_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim224_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim224_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim256_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim256_fp16_sm80.cu
-    )
-
-    set_source_files_properties(
-      src/ops/flash-attention/flash_fwd_hdim32_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim32_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim64_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim64_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim96_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim96_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim128_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim128_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim160_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim160_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim192_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim192_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim224_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim224_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim256_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_hdim256_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim32_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim32_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim64_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim64_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim96_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim96_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim128_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim128_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim160_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim160_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim192_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim192_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim224_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim224_fp16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim256_bf16_sm80.cu
-      src/ops/flash-attention/flash_fwd_split_hdim256_fp16_sm80.cu
-      PROPERTIES COMPILE_FLAGS "--use_fast_math")
-  endif()
   set(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
   cuda_add_library(${PROJECT_NAME}
     ${SOURCES}
-    src/cuda/allocator.cc
-    src/cuda/primitives.cu
-    src/cuda/random.cu
-    src/cuda/utils.cc
-    src/ops/alibi_add_gpu.cu
-    src/ops/bias_add_gpu.cu
-    src/ops/concat_split_slide_gpu.cu
-    src/ops/conv1d_gpu.cu
-    src/ops/dequantize_gpu.cu
-    src/ops/flash_attention_gpu.cu
-    src/ops/gather_gpu.cu
-    src/ops/gumbel_max_gpu.cu
-    src/ops/layer_norm_gpu.cu
-    src/ops/mean_gpu.cu
-    src/ops/multinomial_gpu.cu
-    src/ops/rms_norm_gpu.cu
-    src/ops/rotary_gpu.cu
-    src/ops/softmax_gpu.cu
-    src/ops/tile_gpu.cu
-    src/ops/topk_gpu.cu
-    src/ops/topp_mask_gpu.cu
-    src/ops/quantize_gpu.cu
-    src/ops/nccl_ops_gpu.cu
-    src/ops/awq/gemm_gpu.cu
-    src/ops/awq/gemv_gpu.cu
-    src/ops/awq/dequantize_gpu.cu
-  )
-
-
+    ${GPU_SOURCES}
+    )
+  endif()
 elseif(WITH_CUDNN)
   message(FATAL_ERROR "WITH_CUDNN=ON requires WITH_CUDA=ON")
 else()
+  list(APPEND SOURCES
+	  src/devices.cc
+	  src/types.cc
+	  src/storage_view.cc
+	  src/utils.cc
+          src/models/model.cc
+	  src/models/wav2vec2.cc
+	  src/models/wav2vec2bert.cc
+	  src/models/whisper.cc)
   add_library(${PROJECT_NAME} ${SOURCES})
 endif()
 
@@ -680,10 +635,6 @@ target_include_directories(${PROJECT_NAME} BEFORE
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
   PRIVATE ${PRIVATE_INCLUDE_DIRECTORIES}
 )
-
-if (WITH_TENSOR_PARALLEL AND CUDA_DYNAMIC_LOADING)
-  target_compile_options(${PROJECT_NAME} PRIVATE -DOMPI_SKIP_MPICXX)
-endif()
 
 if(BUILD_TESTS)
   add_subdirectory(tests)
@@ -726,11 +677,6 @@ configure_file(cmake/${PROJECT_NAME}Config.cmake
   COPYONLY
 )
 
-configure_file(cmake/FindNCCL.cmake
-  "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/FindNCCL.cmake"
-  COPYONLY
-)
-
 set(ConfigPackageLocation ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 
 if(BUILD_SHARED_LIBS)
@@ -747,7 +693,6 @@ endif()
 install(
   FILES
     cmake/${PROJECT_NAME}Config.cmake
-    cmake/FindNCCL.cmake
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
   DESTINATION
     ${ConfigPackageLocation}

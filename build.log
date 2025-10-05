@@ -1,0 +1,11 @@
+[0;32m=== CTranslate2 ROCm Build Script ===[0m
+[0;32mDetected GPU architecture: gfx1100[0m
+[1;33mChecking ROCm installation...[0m
+[0;32mROCm driver version: 6.14.14[0m
+[0;32mAll ROCm dependencies found![0m
+[1;33mConfiguring with CMake...[0m
+CMake Error at CMakeLists.txt:739 (elseif):
+  Flow control statements are not properly nested.
+
+
+-- Configuring incomplete, errors occurred!
