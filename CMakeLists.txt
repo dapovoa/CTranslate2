@@ -476,16 +476,16 @@ if (WITH_CUDA)
     src/ops/awq/dequantize_gpu.cu
     )
   add_definitions(-DCT2_WITH_CUDA)
-  list(APPEND GPU_SOURCES
- 	src/devices.cc
-	src/types.cc
-        src/storage_view.cc
-        src/utils.cc
-        src/models/model.cc
-        src/models/wav2vec2.cc
-        src/models/wav2vec2bert.cc
-        src/models/whisper.cc
-      )
+  set(GPU_CXX_SOURCES
+    src/devices.cc
+    src/types.cc
+    src/storage_view.cc
+    src/utils.cc
+    src/models/model.cc
+    src/models/wav2vec2.cc
+    src/models/wav2vec2bert.cc
+    src/models/whisper.cc
+  )
   if(GPU_RUNTIME STREQUAL "HIP")
     enable_language(${GPU_RUNTIME})
     set(CMAKE_${GPU_RUNTIME}_STANDARD 17)
@@ -494,17 +494,20 @@ if (WITH_CUDA)
     add_definitions(-D__HIP_PLATFORM_AMD__)
     find_package(hipblas REQUIRED)
     find_package(hip REQUIRED)
+    include_directories(SYSTEM ${ROCM_PATH}/include)
+    list(APPEND PRIVATE_INCLUDE_DIRECTORIES ${ROCM_PATH}/include)
 
     if(WITH_CUDNN)
         find_package(miopen REQUIRED)
         add_definitions(-DCT2_WITH_CUDNN)
     endif()
- #    list(APPEND GPU_SOURCES   src/devices.cc src/types.cc src/utils.cc src/models/model.cc src/models/whisper.cc)
     add_library(${PROJECT_NAME} SHARED
     ${SOURCES}
     ${GPU_SOURCES}
+    ${GPU_CXX_SOURCES}
     )
     set_source_files_properties(${GPU_SOURCES} PROPERTIES LANGUAGE ${GPU_RUNTIME})
+    set_source_files_properties(${GPU_CXX_SOURCES} PROPERTIES LANGUAGE CXX)
     set_source_files_properties(${SOURCES}  PROPERTIES LANGUAGE CXX)
     target_link_libraries(${PROJECT_NAME} PUBLIC roc::hipblas)
     if(WITH_CUDNN)
