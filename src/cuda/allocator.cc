@@ -7,8 +7,13 @@
 #include "cuda/utils.h"
 #include "env.h"
 
-#include <cuda.h>
-#include <cub/util_allocator.cuh>
+#ifdef __HIP_PLATFORM_AMD__
+  #include <hip/hip_runtime_api.h>
+  #include <hipcub/util_allocator.hpp>
+#else
+  #include <cuda.h>
+  #include <cub/util_allocator.cuh>
+#endif
 #include <spdlog/spdlog.h>
 
 namespace ctranslate2 {

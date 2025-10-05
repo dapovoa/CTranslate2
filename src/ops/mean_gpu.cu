@@ -1,13 +1,13 @@
 #include "ctranslate2/ops/mean.h"
 
+#include "cuda/helpers.h"
+#include "type_dispatch.h"
+
 #ifdef __HIP_PLATFORM_AMD__
   #include <hipcub/block/block_reduce.hpp>
 #else
   #include <cub/block/block_reduce.cuh>
 #endif
-
-#include "type_dispatch.h"
-#include "cuda/helpers.h"
 
 namespace ctranslate2 {
   namespace ops {
@@ -35,9 +35,10 @@ namespace ctranslate2 {
       AccumT sum = BlockReduce(temp_storage).Sum(thread_sum);
 
       if (threadIdx.x == 0) {
-        output[blockIdx.x] = sum;
         if (!get_sum)
-          output[blockIdx.x] /= AccumT(axis_size);
+          output[blockIdx.x] = T(sum / AccumT(axis_size));
+        else
+          output[blockIdx.x] = sum;
       }
     }
 

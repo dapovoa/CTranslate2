@@ -1,18 +1,15 @@
 #include "ctranslate2/ops/multinomial.h"
 
-#ifdef __HIP_PLATFORM_AMD__
-  #include <hipcub/block/block_reduce.hpp>
-#else
-  #include <cub/block/block_reduce.cuh>
-#endif
-#ifdef __HIP_PLATFORM_AMD__
-  #include <hipcub/block/block_scan.hpp>
-#else
-  #include <cub/block/block_scan.cuh>
-#endif
-
 #include "cuda/helpers.h"
 #include "cuda/random.h"
+
+#ifdef __HIP_PLATFORM_AMD__
+  #include <hipcub/block/block_reduce.hpp>
+  #include <hipcub/block/block_scan.hpp>
+#else
+  #include <cub/block/block_reduce.cuh>
+  #include <cub/block/block_scan.cuh>
+#endif
 
 namespace ctranslate2 {
   namespace ops {

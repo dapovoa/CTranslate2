@@ -2,6 +2,7 @@
 
 #ifdef __HIP_PLATFORM_AMD__
   #include <hiprand/hiprand_kernel.h>
+  #define curandStatePhilox4_32_10_t hiprandStatePhilox4_32_10_t
 #else
   #include <curand_kernel.h>
 #endif

@@ -1,6 +1,6 @@
-[![CI](https://github.com/OpenNMT/CTranslate2/workflows/CI/badge.svg)](https://github.com/OpenNMT/CTranslate2/actions?query=workflow%3ACI) [![PyPI version](https://badge.fury.io/py/ctranslate2.svg)](https://badge.fury.io/py/ctranslate2) [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://opennmt.net/CTranslate2/) [![Gitter](https://badges.gitter.im/OpenNMT/CTranslate2.svg)](https://gitter.im/OpenNMT/CTranslate2?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Forum](https://img.shields.io/discourse/status?server=https%3A%2F%2Fforum.opennmt.net%2F)](https://forum.opennmt.net/)
+[![CI](https://github.com/OpenNMT/CTranslate2/workflows/CI/badge.svg)](https://github.com/OpenNMT/CTranslate2/actions?query=workflow%3ACI) [![PyPI version](https://badge.fury.io/py/ctranslate2.svg)](https://badge.fury.io/py/ctranslate2) [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://opennmt.net/CTranslate2/) [![Gitter](https://badges.gitter.im/OpenNMT/CTranslate2.svg)](https://gitter.im/OpenNMT/CTranslate2?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Forum](https://img.shields.io/discourse/status?server=https%3A%2F%2Fforum.opennmt.net%2F)](https://forum.opennmt.net/) [![ROCm](https://img.shields.io/badge/ROCm-6.3.0-red.svg)](BUILD_ROCM.md)
 
-# CTranslate2
+# CTranslate2 (AMD ROCm Port)
 
 CTranslate2 is a C++ and Python library for efficient inference with Transformer models.
 
@@ -38,12 +38,30 @@ The project is production-oriented and comes with [backward compatibility guaran
 
 Some of these features are difficult to achieve with standard deep learning frameworks and are the motivation for this project.
 
+## AMD ROCm Support
+
+This fork provides **full AMD ROCm 6.3.0+ support** for CTranslate2 v4.6.0, enabling GPU-accelerated inference on AMD Radeon RX 7000/6000 series GPUs.
+
+**Quick start for AMD GPUs:**
+- See [BUILD_ROCM.md](BUILD_ROCM.md) for complete build instructions
+- Tested on RX 7900 XTX (gfx1100) with ROCm 6.3.0
+- Includes Flash Attention v2, Whisper large-v3-turbo support
+- **Note**: AWQ (INT4) quantization is not supported (uses NVIDIA-specific assembly)
+
 ## Installation and usage
 
-CTranslate2 can be installed with pip:
+**For NVIDIA GPUs** - Install from PyPI:
 
 ```bash
 pip install ctranslate2
+```
+
+**For AMD ROCm GPUs** - Build from source (see [BUILD_ROCM.md](BUILD_ROCM.md)):
+
+```bash
+git clone https://github.com/dapovoa/CTranslate2.git
+cd CTranslate2
+# Follow BUILD_ROCM.md for complete instructions
 ```
 
 The Python module is used to convert models and can translate or generate text with few lines of code:

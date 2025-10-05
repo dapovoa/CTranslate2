@@ -1,6 +1,10 @@
 #include "cuda/utils.h"
 #include "dequantize.cuh"
-#include <cublas_v2.h>
+#ifdef __HIP_PLATFORM_AMD__
+  #include <hipblas/hipblas.h>
+#else
+  #include <cublas_v2.h>
+#endif
 #include <ctranslate2/ops/awq/gemv.h>
 #define PACK_FACTOR 8
 #define WARP_SIZE 32

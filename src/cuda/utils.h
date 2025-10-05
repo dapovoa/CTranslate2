@@ -10,6 +10,7 @@
   #include <cublas_v2.h>
 #endif
 #include <thrust/execution_policy.h>
+#include "cuda2hip_macros.hpp"
 
 #ifdef CT2_WITH_CUDNN
     #ifdef __HIP_PLATFORM_AMD__

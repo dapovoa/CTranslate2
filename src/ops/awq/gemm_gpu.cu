@@ -1,6 +1,10 @@
 #include "cuda/utils.h"
 #include "dequantize.cuh"
-#include <cublas_v2.h>
+#ifdef __HIP_PLATFORM_AMD__
+  #include <hipblas/hipblas.h>
+#else
+  #include <cublas_v2.h>
+#endif
 #include <ctranslate2/ops/awq/gemm.h>
 
 namespace ctranslate2 {

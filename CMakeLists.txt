@@ -176,6 +176,7 @@ set(SOURCES
   src/ops/split.cc
   src/ops/slide.cc
   src/ops/sub.cc
+  src/ops/sigmoid.cc
   src/ops/swish.cc
   src/ops/tanh.cc
   src/ops/tile.cc
@@ -187,12 +188,13 @@ set(SOURCES
   src/ops/transpose.cc
   src/ops/nccl_ops.cc
   src/ops/nccl_ops_cpu.cc
-  src/ops/awq/dequantize.cc
-  src/ops/awq/dequantize_cpu.cc
-  src/ops/awq/gemm.cc
-  src/ops/awq/gemm_cpu.cc
-  src/ops/awq/gemv.cc
-  src/ops/awq/gemv_cpu.cc
+  # AWQ ops disabled for ROCm (NVIDIA PTX assembly not compatible)
+  # src/ops/awq/dequantize.cc
+  # src/ops/awq/dequantize_cpu.cc
+  # src/ops/awq/gemm.cc
+  # src/ops/awq/gemm_cpu.cc
+  # src/ops/awq/gemv.cc
+  # src/ops/awq/gemv_cpu.cc
   src/ops/sum.cc
   src/padder.cc
   src/profiler.cc
@@ -438,7 +440,7 @@ if(WIN32)
 else()
    if (NOT DEFINED ROCM_PATH )
       if (NOT DEFINED ENV{ROCM_PATH} )
-        set(ROCM_PATH "/opt/rocm" CACHE PATH "Root directory of the ROCm installation")
+set(ROCM_PATH "/opt/rocm-6.3.0" CACHE PATH "Root directory of the ROCm installation")
       else()
         set(ROCM_PATH $ENV{ROCM_PATH} CACHE PATH "Root directory of the ROCm installation")
       endif()
@@ -471,9 +473,10 @@ if (WITH_CUDA)
     src/ops/topp_mask_gpu.cu
     src/ops/quantize_gpu.cu
     src/ops/nccl_ops_gpu.cu
-    src/ops/awq/gemm_gpu.cu
-    src/ops/awq/gemv_gpu.cu
-    src/ops/awq/dequantize_gpu.cu
+    # AWQ ops disabled for ROCm (NVIDIA PTX assembly not compatible)
+    # src/ops/awq/gemm_gpu.cu
+    # src/ops/awq/gemv_gpu.cu
+    # src/ops/awq/dequantize_gpu.cu
     )
   add_definitions(-DCT2_WITH_CUDA)
   set(GPU_CXX_SOURCES
@@ -609,8 +612,10 @@ if (WITH_CUDA)
     ${GPU_SOURCES}
     )
   endif()  # End GPU_RUNTIME if/else
-elseif(WITH_CUDNN)
-  message(FATAL_ERROR "WITH_CUDNN=ON requires WITH_CUDA=ON")
+else()
+  if(WITH_CUDNN)
+    message(FATAL_ERROR "WITH_CUDNN=ON requires WITH_CUDA=ON")
+  endif()
 endif()  # End if(WITH_CUDA)
 
 if(NOT WITH_CUDA)

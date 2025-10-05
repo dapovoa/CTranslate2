@@ -9,7 +9,7 @@ namespace ctranslate2 {
     struct dequantize_func {
       __device__ __forceinline__
       OutT operator()(float scale, InT x) const {
-        return __fdividef(static_cast<float>(x), scale);
+        return OutT(__fdividef(static_cast<float>(x), scale));
       }
     };
 

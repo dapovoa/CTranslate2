@@ -1,13 +1,13 @@
 #include "ctranslate2/ops/rms_norm.h"
 
+#include "cuda/helpers.h"
+#include "cuda/utils.h"
+
 #ifdef __HIP_PLATFORM_AMD__
   #include <hipcub/block/block_reduce.hpp>
 #else
   #include <cub/block/block_reduce.cuh>
 #endif
-
-#include "cuda/helpers.h"
-#include "cuda/utils.h"
 
 namespace ctranslate2 {
   namespace ops {
