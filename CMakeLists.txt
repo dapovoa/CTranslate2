@@ -494,6 +494,7 @@ if (WITH_CUDA)
     add_definitions(-D__HIP_PLATFORM_AMD__)
     find_package(hipblas REQUIRED)
     find_package(hip REQUIRED)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I${ROCM_PATH}/include")
     include_directories(SYSTEM ${ROCM_PATH}/include)
     list(APPEND PRIVATE_INCLUDE_DIRECTORIES ${ROCM_PATH}/include)
 
