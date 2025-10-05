@@ -21,6 +21,7 @@
 
 #include "ctranslate2/types.h"
 #include "ctranslate2/utils.h"
+#include "cuda2hip_types.hpp"
 
 namespace ctranslate2 {
   namespace cuda {
