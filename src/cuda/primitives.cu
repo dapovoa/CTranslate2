@@ -4,7 +4,7 @@
   #include <cublas_v2.h>
 #else
     #include <hip/hip_runtime.h>
-    #include <hipblas/hipblas.h>
+    #include <hipblas.h>
 #endif
 #include <thrust/device_ptr.h>
 

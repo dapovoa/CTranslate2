@@ -1,0 +1,101 @@
+[0;32m=== CTranslate2 ROCm Build Script ===[0m
+[0;32mDetected GPU architecture: gfx1100[0m
+[1;33mChecking ROCm installation...[0m
+[0;32mROCm driver version: 6.14.14[0m
+[0;32mAll ROCm dependencies found![0m
+[1;33mConfiguring with CMake...[0m
+-- The C compiler identification is GNU 13.3.0
+-- The CXX compiler identification is Clang 18.0.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /opt/rocm/bin/hipcc - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE  
+-- Build spdlog: 1.10.0
+-- Build type: Release
+CMake Deprecation Warning at third_party/cpu_features/CMakeLists.txt:1 (cmake_minimum_required):
+  Compatibility with CMake < 3.5 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value or use a ...<max> suffix to tell
+  CMake that the project does not need compatibility with older versions.
+
+
+-- Looking for dlfcn.h
+-- Looking for dlfcn.h - found
+-- Looking for getauxval
+-- Looking for getauxval - found
+-- Compiling for multiple CPU ISA and enabling runtime dispatch
+-- Found OpenMP_C: -fopenmp (found version "4.5") 
+-- Found OpenMP_CXX: -fopenmp=libomp  
+-- Found OpenMP: TRUE (found version "4.5")  
+-- Using OpenMP: /opt/rocm-6.3.0/lib/llvm/lib/libomp.so;/usr/lib/x86_64-linux-gnu/libpthread.a
+-- The HIP compiler identification is Clang 18.0.0
+-- Detecting HIP compiler ABI info
+-- Detecting HIP compiler ABI info - done
+-- Check for working HIP compiler: /opt/rocm-6.3.0/lib/llvm/bin/clang++ - skipped
+-- Detecting HIP compile features
+-- Detecting HIP compile features - done
+-- Performing Test HIP_CLANG_SUPPORTS_PARALLEL_JOBS
+-- Performing Test HIP_CLANG_SUPPORTS_PARALLEL_JOBS - Success
+-- Librt: /usr/lib/x86_64-linux-gnu/librt.a
+-- Performing Test COMPILER_HAS_HIDDEN_VISIBILITY
+-- Performing Test COMPILER_HAS_HIDDEN_VISIBILITY - Success
+-- Performing Test COMPILER_HAS_HIDDEN_INLINE_VISIBILITY
+-- Performing Test COMPILER_HAS_HIDDEN_INLINE_VISIBILITY - Success
+-- Performing Test COMPILER_HAS_DEPRECATED_ATTR
+-- Performing Test COMPILER_HAS_DEPRECATED_ATTR - Success
+-- Configuring done (5.1s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/dapovoa/github/CTranslate2/build
+[0;32m✓ MIOpen (cuDNN) support enabled[0m
+[1;33mBuilding CTranslate2 library...[0m
+[  0%] Building C object third_party/cpu_features/CMakeFiles/utils.dir/src/filesystem.c.o
+[  2%] Building C object third_party/cpu_features/CMakeFiles/utils.dir/src/stack_line_reader.c.o
+[  2%] Building C object third_party/cpu_features/CMakeFiles/utils.dir/src/string_view.c.o
+[  2%] Built target utils
+[  3%] Building C object third_party/cpu_features/CMakeFiles/cpu_features.dir/src/impl_ppc_linux.c.o
+[  3%] Building C object third_party/cpu_features/CMakeFiles/cpu_features.dir/src/impl_aarch64_linux_or_android.c.o
+[  3%] Building C object third_party/cpu_features/CMakeFiles/cpu_features.dir/src/impl_x86_linux_or_android.c.o
+[  4%] Building C object third_party/cpu_features/CMakeFiles/cpu_features.dir/src/impl_x86_freebsd.c.o
+[  4%] Building C object third_party/cpu_features/CMakeFiles/cpu_features.dir/src/impl_x86_windows.c.o
+[  5%] Building C object third_party/cpu_features/CMakeFiles/cpu_features.dir/src/impl_arm_linux_or_android.c.o
+[  5%] Building C object third_party/cpu_features/CMakeFiles/cpu_features.dir/src/impl_mips_linux_or_android.c.o
+[  6%] Building C object third_party/cpu_features/CMakeFiles/cpu_features.dir/src/impl_x86_macos.c.o
+[  7%] Linking C static library libcpu_features.a
+[  7%] Built target cpu_features
+[  7%] Building CXX object CMakeFiles/ctranslate2.dir/src/batch_reader.cc.o
+[  8%] Building CXX object CMakeFiles/ctranslate2.dir/src/cpu/kernels.cc.o
+[  8%] Building CXX object CMakeFiles/ctranslate2.dir/src/cpu/parallel.cc.o
+[  9%] Building CXX object CMakeFiles/ctranslate2.dir/src/allocator.cc.o
+[ 10%] Building CXX object CMakeFiles/ctranslate2.dir/src/cpu/primitives.cc.o
+[ 11%] Building CXX object CMakeFiles/ctranslate2.dir/src/buffered_translation_wrapper.cc.o
+[ 11%] Building CXX object CMakeFiles/ctranslate2.dir/src/cpu/allocator.cc.o
+[ 12%] Building CXX object CMakeFiles/ctranslate2.dir/src/decoding.cc.o
+[ 13%] Building CXX object CMakeFiles/ctranslate2.dir/src/decoding_utils.cc.o
+[ 13%] Building CXX object CMakeFiles/ctranslate2.dir/src/cpu/backend.cc.o
+[ 15%] Building CXX object CMakeFiles/ctranslate2.dir/src/cpu/cpu_info.cc.o
+[ 15%] Building CXX object CMakeFiles/ctranslate2.dir/src/encoder.cc.o
+[ 15%] Building CXX object CMakeFiles/ctranslate2.dir/src/cpu/cpu_isa.cc.o
+[ 16%] Building CXX object CMakeFiles/ctranslate2.dir/src/filesystem.cc.o
+[ 16%] Building CXX object CMakeFiles/ctranslate2.dir/src/generator.cc.o
+[ 17%] Building CXX object CMakeFiles/ctranslate2.dir/src/layers/attention_layer.cc.o
+[ 17%] Building CXX object CMakeFiles/ctranslate2.dir/src/layers/attention.cc.o
+[ 18%] Building CXX object CMakeFiles/ctranslate2.dir/src/layers/flash_attention.cc.o
+[ 19%] Building CXX object CMakeFiles/ctranslate2.dir/src/dtw.cc.o
+[ 20%] Building CXX object CMakeFiles/ctranslate2.dir/src/layers/common.cc.o
+[ 21%] Building CXX object CMakeFiles/ctranslate2.dir/src/layers/transformer.cc.o
+[ 22%] Building CXX object CMakeFiles/ctranslate2.dir/src/env.cc.o
+[ 22%] Building CXX object CMakeFiles/ctranslate2.dir/src/logging.cc.o
+[ 22%] Building CXX object CMakeFiles/ctranslate2.dir/src/layers/decoder.cc.o
+[ 23%] Building CXX object CMakeFiles/ctranslate2.dir/src/layers/wav2vec2.cc.o
+[ 23%] Building CXX object CMakeFiles/ctranslate2.dir/src/layers/wav2vec2bert.cc.o
+[ 24%] Building CXX object CMakeFiles/ctranslate2.dir/src/models/language_model.cc.o
