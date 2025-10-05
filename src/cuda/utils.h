@@ -5,7 +5,6 @@
 #ifdef __HIP_PLATFORM_AMD__
   #include <hip/hip_runtime.h>
   #include <hipblas/hipblas.h>
-  #include <cuda2hip_macros.hpp>
 #else
   #include <cuda_runtime.h>
   #include <cublas_v2.h>

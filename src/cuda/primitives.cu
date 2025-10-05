@@ -5,6 +5,7 @@
 #else
     #include <hip/hip_runtime.h>
     #include <hipblas/hipblas.h>
+    #include <cuda2hip_macros.hpp>
 #endif
 #include <thrust/device_ptr.h>
 
