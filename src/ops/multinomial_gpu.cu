@@ -1,7 +1,15 @@
 #include "ctranslate2/ops/multinomial.h"
 
-#include <cub/block/block_reduce.cuh>
-#include <cub/block/block_scan.cuh>
+#ifdef __HIP_PLATFORM_AMD__
+  #include <hipcub/block/block_reduce.hpp>
+#else
+  #include <cub/block/block_reduce.cuh>
+#endif
+#ifdef __HIP_PLATFORM_AMD__
+  #include <hipcub/block/block_scan.hpp>
+#else
+  #include <cub/block/block_scan.cuh>
+#endif
 
 #include "cuda/helpers.h"
 #include "cuda/random.h"

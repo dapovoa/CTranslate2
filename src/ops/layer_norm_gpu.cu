@@ -140,7 +140,11 @@ namespace ctranslate2 {
   POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cub/block/block_reduce.cuh>
+#ifdef __HIP_PLATFORM_AMD__
+  #include <hipcub/block/block_reduce.hpp>
+#else
+  #include <cub/block/block_reduce.cuh>
+#endif
 
 namespace at {
   namespace native {

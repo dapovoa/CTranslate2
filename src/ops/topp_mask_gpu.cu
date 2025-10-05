@@ -1,6 +1,10 @@
 #include "ctranslate2/ops/topp_mask.h"
 
-#include <cub/block/block_radix_sort.cuh>
+#ifdef __HIP_PLATFORM_AMD__
+  #include <hipcub/block/block_radix_sort.hpp>
+#else
+  #include <cub/block/block_radix_sort.cuh>
+#endif
 
 #include "cuda/helpers.h"
 
