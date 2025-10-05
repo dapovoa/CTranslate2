@@ -608,10 +608,12 @@ if (WITH_CUDA)
     ${SOURCES}
     ${GPU_SOURCES}
     )
-  endif()
+  endif()  # End GPU_RUNTIME if/else
 elseif(WITH_CUDNN)
   message(FATAL_ERROR "WITH_CUDNN=ON requires WITH_CUDA=ON")
-else()
+endif()  # End if(WITH_CUDA)
+
+if(NOT WITH_CUDA)
   list(APPEND SOURCES
 	  src/devices.cc
 	  src/types.cc
