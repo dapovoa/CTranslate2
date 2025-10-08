@@ -18,6 +18,22 @@ Added proper MIOpen linkage for Conv1D operations, required for Whisper and othe
 
 See [BUILD_ROCM.md](BUILD_ROCM.md) for detailed build instructions.
 
+### GPU-Only Build
+
+**Important**: This build is configured exclusively for AMD ROCm GPUs and does not include CPU computation backends (Intel MKL, OpenBLAS, oneDNN). This is intentional for optimal performance in real-time inference workloads.
+
+**Why GPU-only?**
+- **Performance**: Whisper large-v3 processes audio in 0.4-1 second on GPU vs 10-30 seconds on CPU
+- **Target use case**: Real-time inference applications where CPU performance is insufficient
+- **Simplified dependencies**: Reduces build complexity and wheel size
+
+**Implications:**
+- Models must use `device="cuda"` with compute types like `float16` or `int8_float16`
+- Setting `device="cpu"` will fail with error: `"No SGEMM backend on CPU"`
+- For CPU inference, use the official CTranslate2 package from PyPI
+
+**Pre-built wheels**: Available in [Releases](https://github.com/dapovoa/CTranslate2/releases)
+
 ### Changes for ROCm 6.2+ / 7.x Compatibility
 
 The hipBLAS API changed between ROCm 6.x and 7.x. This fork includes **automatic version detection** to support both:

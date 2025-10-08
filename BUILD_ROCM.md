@@ -2,6 +2,31 @@
 
 This guide explains how to build CTranslate2 with full AMD ROCm support, including MIOpen for GPU-accelerated Conv1D operations (required for Whisper models).
 
+## Important: GPU-Only Build
+
+**This build is configured exclusively for AMD ROCm GPUs and does not include CPU computation backends.**
+
+### Why GPU-Only?
+
+This build intentionally disables CPU backends (Intel MKL, OpenBLAS, oneDNN) because:
+
+- **Real-time performance requirements**: Whisper large-v3 on CPU takes 10-30 seconds per 10-second audio segment, while GPU processes the same in 0.4-1 second
+- **Target use case**: GPU-accelerated inference for production workloads where real-time or near-real-time performance is critical
+- **Simplified dependencies**: Reduces build complexity and wheel size by focusing only on ROCm GPU support
+
+### Implications
+
+- Models **must** be loaded on GPU with `device="cuda"` and appropriate compute types (`float16`, `int8_float16`)
+- Setting `device="cpu"` will result in runtime error: `"No SGEMM backend on CPU"`
+- If you require CPU inference, use the official CTranslate2 package from PyPI
+
+### Performance Comparison
+
+| Device | Model | Latency (10s audio) | Usability |
+|--------|-------|---------------------|-----------|
+| CPU | Whisper large-v3 | 10-30 seconds | Unusable for real-time |
+| AMD GPU (ROCm) | Whisper large-v3 | 0.4-1 second | Production-ready |
+
 ## Prerequisites
 
 ### System Requirements
@@ -167,6 +192,17 @@ sudo apt-get install hipblas-dev
 1. Ensure `sudo make install` was run for libctranslate2
 2. Verify `/usr/local/lib/libctranslate2.so.3` has MIOpen: `ldd /usr/local/lib/libctranslate2.so.3 | grep MIOpen`
 3. Rebuild Python package with clean build: `rm -rf build dist && python setup.py bdist_wheel`
+
+## Known Limitations
+
+### No CPU Backend Support
+- This build does **not** include CPU computation backends (MKL, OpenBLAS, DNNL)
+- CPU device will fail with: `"No SGEMM backend on CPU"`
+- This is intentional for the target use case (real-time GPU inference)
+
+### AWQ Quantization Not Supported
+- AWQ quantization (INT4) uses NVIDIA PTX assembly incompatible with ROCm
+- Alternative: Use native INT8 quantization with `int8_float16` compute type
 
 ## Performance Notes
 
