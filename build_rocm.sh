@@ -4,6 +4,10 @@
 
 set -e  # Exit on error
 
+# Add ROCm to PATH
+export PATH=/opt/rocm/bin:/opt/rocm-6.3.0/bin:$PATH
+export ROCM_PATH=/opt/rocm
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -65,7 +69,7 @@ configure_cmake() {
         -DWITH_CUDA=ON \
         -DWITH_CUDNN=ON \
         -DWITH_MKL=OFF \
-        -DOPENMP_RUNTIME=COMP \
+        -DOPENMP_RUNTIME=NONE \
         -DCMAKE_PREFIX_PATH="/opt/rocm" \
         -DCMAKE_CXX_COMPILER=/opt/rocm/bin/hipcc \
         -DAMDGPU_TARGETS=${ARCH} \
@@ -87,7 +91,7 @@ build_library() {
     echo -e "${YELLOW}Building CTranslate2 library...${NC}"
 
     cd build
-    make -j$(nproc)
+    make -j28
 
     # Verify MIOpen linkage
     if ldd libctranslate2.so | grep -q "libMIOpen"; then

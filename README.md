@@ -69,8 +69,24 @@ The version detection is done at compile time using `HIP_VERSION` macro, ensurin
 
 ### Building from Source
 
+**Automated build (recommended):**
+
 ```bash
-git clone --branch amd_dev --recursive https://github.com/dapovoa/CTranslate2.git
+git clone --branch amd_dev_v4.6.0_rocm6.3 --recursive https://github.com/dapovoa/CTranslate2.git
+cd CTranslate2
+./build_rocm.sh
+```
+
+The script will:
+- Detect your GPU architecture automatically
+- Build with MIOpen support for Whisper models
+- Verify linkage and create Python wheel
+- Install library system-wide (requires sudo)
+
+**Manual build:**
+
+```bash
+git clone --branch amd_dev_v4.6.0_rocm6.3 --recursive https://github.com/dapovoa/CTranslate2.git
 cd CTranslate2
 mkdir build && cd build
 
@@ -81,7 +97,8 @@ cmake -DCMAKE_PREFIX_PATH="/opt/rocm" \
       -DWITH_MKL=OFF \
       -DWITH_DNNL=OFF \
       -DWITH_OPENBLAS=OFF \
-      -DOPENMP_RUNTIME=COMP \
+      -DOPENMP_RUNTIME=NONE \
+      -DCMAKE_CXX_COMPILER=/opt/rocm/bin/hipcc \
       -DCMAKE_HIP_ARCHITECTURES="gfx1100" \
       -DGPU_TARGETS="gfx1100" \
       -DCMAKE_BUILD_TYPE=Release \
@@ -89,9 +106,11 @@ cmake -DCMAKE_PREFIX_PATH="/opt/rocm" \
       -DENABLE_CPU_DISPATCH=OFF \
       -DCMAKE_CXX_FLAGS="-O3" ..
 
-make -j$(nproc) install
+make -j$(nproc)
+sudo make install
+sudo ldconfig
 
-# Build Python wheel
+# Build Python wheel (must install library first)
 cd ../python
 pip install pybind11 wheel
 python setup.py bdist_wheel
