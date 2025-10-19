@@ -1,126 +1,55 @@
 [![CI](https://github.com/OpenNMT/CTranslate2/workflows/CI/badge.svg)](https://github.com/OpenNMT/CTranslate2/actions?query=workflow%3ACI) [![PyPI version](https://badge.fury.io/py/ctranslate2.svg)](https://badge.fury.io/py/ctranslate2) [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://opennmt.net/CTranslate2/) [![Gitter](https://badges.gitter.im/OpenNMT/CTranslate2.svg)](https://gitter.im/OpenNMT/CTranslate2?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Forum](https://img.shields.io/discourse/status?server=https%3A%2F%2Fforum.opennmt.net%2F)](https://forum.opennmt.net/) [![ROCm](https://img.shields.io/badge/ROCm-6.3.0-red.svg)](BUILD_ROCM.md)
 
-# CTranslate2 (AMD ROCm Port)
+# CTranslate2 for AMD ROCm
 
-## ROCm 6.2+ and 7.x Support
+This is a fork of [OpenNMT/CTranslate2](https://github.com/OpenNMT/CTranslate2) focused on providing robust and optimized support for AMD GPUs using the ROCm platform.
 
-This fork includes compatibility fixes for ROCm 6.2+ and 7.x based on the official [ROCm/CTranslate2](https://github.com/ROCm/CTranslate2) repository. The original AMD fork targets ROCm 6.1, but significant API changes in ROCm 7.0+ required modifications.
+If you've ever wanted to run large Transformer models like Whisper on your AMD hardware, you're in the right place. This port is designed to be performant, up-to-date, and easy to use.
 
-### MIOpen Support for Whisper Models
+## What's Special About This Fork?
 
-Added proper MIOpen linkage for Conv1D operations, required for Whisper and other speech models. Previous builds would fail with "Conv1D on GPU currently requires the cuDNN library" error.
+This isn't just a simple recompile. It includes several key improvements to make the experience on ROCm smooth and efficient.
 
-**What's Fixed:**
-- Automatic MIOpen detection and linkage in Python setup.py
-- Proper rpath configuration for ROCm libraries
-- Whisper models now work correctly on AMD GPUs
-- Automated build script with verification (build_rocm.sh)
+*   **Modern ROCm Support (6.2+ and 7.x)**
+    *   The official AMD fork targets ROCm 6.1. This version is updated to work with modern ROCm releases, handling API changes automatically at compile time.
 
-See [BUILD_ROCM.md](BUILD_ROCM.md) for detailed build instructions.
+*   **Whisper Models Actually Work**
+    *   A common issue with other forks was the `"Conv1D on GPU currently requires the cuDNN library"` error when running Whisper models. This is fixed by properly linking to MIOpen, AMD's equivalent of cuDNN.
 
-### GPU-Only Build
+*   **GPU-Only for Peak Performance**
+    *   This build is intentionally **GPU-only**. CPU backends are disabled to maximize performance for real-time inference, where every millisecond counts. For CPU-based tasks, the official CTranslate2 package is still your best bet.
 
-**Important**: This build is configured exclusively for AMD ROCm GPUs and does not include CPU computation backends (Intel MKL, OpenBLAS, oneDNN). This is intentional for optimal performance in real-time inference workloads.
+*   **Automated Builds**
+    *   The included `build_rocm.sh` script handles the entire build process, from detecting your GPU architecture to creating a Python wheel.
 
-**Why GPU-only?**
-- **Performance**: Whisper large-v3 processes audio in 0.4-1 second on GPU vs 10-30 seconds on CPU
-- **Target use case**: Real-time inference applications where CPU performance is insufficient
-- **Simplified dependencies**: Reduces build complexity and wheel size
+## Getting Started
 
-**Implications:**
-- Models must use `device="cuda"` with compute types like `float16` or `int8_float16`
-- Setting `device="cpu"` will fail with error: `"No SGEMM backend on CPU"`
-- For CPU inference, use the official CTranslate2 package from PyPI
+### Using Pre-Built Wheels (Recommended)
 
-**Pre-built wheels**: Available in [Releases](https://github.com/dapovoa/CTranslate2/releases)
-
-### Changes for ROCm 6.2+ / 7.x Compatibility
-
-The hipBLAS API changed between ROCm 6.x and 7.x. This fork includes **automatic version detection** to support both:
-
-**ROCm 6.2 - 6.x:**
-- Uses `hipblasDatatype_t` for compute types
-- Maps `CUDA_COMPUTE_*` to `HIPBLAS_R_*` (data types)
-
-**ROCm 7.0+:**
-- Uses `hipblasComputeType_t` for compute types
-- Maps `CUDA_COMPUTE_*` to `HIPBLAS_COMPUTE_*` (compute types)
-
-The version detection is done at compile time using `HIP_VERSION` macro, ensuring seamless compatibility across ROCm versions.
-
-### Tested Configurations
-
-**ROCm 6.2.4:**
-- GPU: AMD Radeon RX 7900 XT (gfx1100)
-- Python: 3.12
-- Build Type: Release with HIP support
-
-**ROCm 6.3.0:**
-- GPU: AMD Radeon RX 7900 XTX (gfx1100)
-- Driver: amdgpu 6.14.14
-- Python: 3.12
-- PyTorch: 2.7.0+rocm6.3
-- Build Type: Release with HIP support
-
-**ROCm 7.0.1:**
-- GPU: AMD Radeon RX 7900 XT (gfx1100)
-- Python: 3.12
-- Build Type: Release with HIP support
+The easiest way to get started is to download a pre-compiled wheel from the [Releases](https://github.com/dapovoa/CTranslate2/releases) page. These are available for recent ROCm versions.
 
 ### Building from Source
 
-**Automated build (recommended):**
+If you need to build for a specific configuration, you can build from source.
 
-```bash
-git clone --branch amd_dev_v4.6.0_rocm6.3 --recursive https://github.com/dapovoa/CTranslate2.git
-cd CTranslate2
-./build_rocm.sh
-```
+1.  **Clone the repository:**
+    ```bash
+    git clone --branch amd_dev_v4.6.0_rocm6.3 --recursive https://github.com/dapovoa/CTranslate2.git
+    cd CTranslate2
+    ```
 
-The script will:
-- Detect your GPU architecture automatically
-- Build with MIOpen support for Whisper models
-- Verify linkage and create Python wheel
-- Install library system-wide (requires sudo)
+2.  **Run the build script:**
+    ```bash
+    ./build_rocm.sh
+    ```
+    This script will automate the build. For manual build steps and advanced configuration, see [BUILD_ROCM.md](BUILD_ROCM.md).
 
-**Manual build:**
+## Tested Configurations
 
-```bash
-git clone --branch amd_dev_v4.6.0_rocm6.3 --recursive https://github.com/dapovoa/CTranslate2.git
-cd CTranslate2
-mkdir build && cd build
+This fork has been tested on the following configurations:
 
-cmake -DCMAKE_PREFIX_PATH="/opt/rocm" \
-      -DCMAKE_INSTALL_PREFIX=/usr/local \
-      -DWITH_CUDA=ON \
-      -DWITH_CUDNN=ON \
-      -DWITH_MKL=OFF \
-      -DWITH_DNNL=OFF \
-      -DWITH_OPENBLAS=OFF \
-      -DOPENMP_RUNTIME=NONE \
-      -DCMAKE_CXX_COMPILER=/opt/rocm/bin/hipcc \
-      -DCMAKE_HIP_ARCHITECTURES="gfx1100" \
-      -DGPU_TARGETS="gfx1100" \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DGPU_RUNTIME=HIP \
-      -DENABLE_CPU_DISPATCH=OFF \
-      -DCMAKE_CXX_FLAGS="-O3" ..
-
-make -j$(nproc)
-sudo make install
-sudo ldconfig
-
-# Build Python wheel (must install library first)
-cd ../python
-pip install pybind11 wheel
-python setup.py bdist_wheel
-```
-
-Replace `gfx1100` with your GPU architecture (`gfx90a`, `gfx942`, `gfx1030`, etc.).
-
-### Pre-built Wheels
-
-Pre-compiled Python wheels for ROCm 6.2.4, 6.3, and 7.0.1 are available in the [Releases](https://github.com/dapovoa/CTranslate2/releases) section.
+*   **ROCm 6.2.4 & 7.0.1:** AMD Radeon RX 7900 XT (gfx1100)
+*   **ROCm 6.3.0:** AMD Radeon RX 7900 XTX (gfx1100)
 
 ---
 
@@ -160,38 +89,26 @@ The project is production-oriented and comes with [backward compatibility guaran
 
 Some of these features are difficult to achieve with standard deep learning frameworks and are the motivation for this project.
 
-## AMD ROCm Support
-
-This fork provides **full AMD ROCm 6.3.0+ support** for CTranslate2 v4.6.0, enabling GPU-accelerated inference on AMD Radeon RX 7000/6000 series GPUs.
-
-**Quick start for AMD GPUs:**
-- See [BUILD_ROCM.md](BUILD_ROCM.md) for complete build instructions
-- Tested on RX 7900 XTX (gfx1100) with ROCm 6.3.0
-- Includes Flash Attention v2, Whisper large-v3-turbo support
-- **Note**: AWQ (INT4) quantization is not supported (uses NVIDIA-specific assembly)
-
 ## Installation and usage
 
-**For NVIDIA GPUs** - Install from PyPI:
+The official CTranslate2 package can be installed from PyPI and supports NVIDIA GPUs and CPUs:
 
 ```bash
 pip install ctranslate2
 ```
 
-**For AMD ROCm GPUs** - Build from source (see [BUILD_ROCM.md](BUILD_ROCM.md)):
+For AMD ROCm support, please follow the instructions in the **Getting Started** section above.
 
-```bash
-git clone https://github.com/dapovoa/CTranslate2.git
-cd CTranslate2
-# Follow BUILD_ROCM.md for complete instructions
-```
-
-The Python module is used to convert models and can translate or generate text with few lines of code:
+Once installed, the Python module can be used to convert models and then perform translation or text generation:
 
 ```python
+import ctranslate2
+
+# Example for translation
 translator = ctranslate2.Translator(translation_model_path)
 translator.translate_batch(tokens)
 
+# Example for generation
 generator = ctranslate2.Generator(generation_model_path)
 generator.generate_batch(start_tokens)
 ```

@@ -1,20 +1,39 @@
-# Building CTranslate2 v4.6.0 for AMD ROCm
+# Building CTranslate2 for AMD ROCm
 
-This guide explains how to build CTranslate2 v4.6.0 with full AMD ROCm support, including MIOpen for GPU-accelerated operations (Conv1D, Flash Attention, etc.).
+This guide provides step-by-step instructions for compiling CTranslate2 with full support for AMD ROCm, enabling high-performance inference on AMD GPUs.
 
-## Prerequisites
+## Quick Build (Recommended)
 
-### System Requirements
-- AMD GPU with ROCm support (tested on RX 7900 XTX - gfx1100)
-- Ubuntu 22.04/24.04 LTS (or compatible Linux distribution)
-- ROCm 6.3.0 or later
-- Python 3.8+ (tested with Python 3.12)
-
-### Install ROCm Dependencies
+For most users, the automated build script is the recommended method. It handles dependency checks, GPU detection, and wheel creation.
 
 ```bash
-# Install ROCm core packages
+git clone https://github.com/dapovoa/CTranslate2.git
+cd CTranslate2
+./build_rocm.sh
+```
+
+For manual configuration and a deeper understanding of the build process, follow the detailed steps below.
+
+---
+
+## Manual Build Instructions
+
+### 1. Prerequisites
+
+#### System Requirements
+*   **GPU**: An AMD GPU compatible with ROCm.
+*   **OS**: Ubuntu 22.04/24.04 LTS or a compatible Linux distribution.
+*   **ROCm**: Version 6.3.0 or later.
+*   **Python**: Version 3.8 or later.
+
+#### Install Dependencies
+First, install the required ROCm packages.
+
+```bash
+# Update package lists
 sudo apt-get update
+
+# Install ROCm core libraries
 sudo apt-get install -y \
     rocm-dev \
     rocm-libs \
@@ -23,27 +42,25 @@ sudo apt-get install -y \
     hipblas-dev \
     rocblas-dev
 
-# Verify ROCm installation
+# Verify the ROCm installation
 rocm-smi --showdriverversion
 ```
 
-## Build Instructions
+### 2. Build the C++ Library
 
-### 1. Clone and Configure
+This involves cloning the repository and using CMake to configure and compile the project.
 
+#### Step 2.1: Clone the Repository
 ```bash
-# Clone the repository
 git clone https://github.com/dapovoa/CTranslate2.git
 cd CTranslate2
-
-# Create build directory
-mkdir -p build
-cd build
+mkdir -p build && cd build
 ```
 
-### 2. CMake Configuration
+#### Step 2.2: Configure with CMake
+The following command configures the build for a ROCm environment.
 
-**Important:** You must enable `WITH_CUDNN=ON` to get MIOpen support for Conv1D operations.
+**Note:** You must specify your GPU architecture using the `-DCMAKE_HIP_ARCHITECTURES` flag. Find your architecture by running `rocminfo | grep gfx`.
 
 ```bash
 cmake -DCMAKE_PREFIX_PATH="/opt/rocm" \
@@ -63,144 +80,116 @@ cmake -DCMAKE_PREFIX_PATH="/opt/rocm" \
       -DCMAKE_CXX_FLAGS="-O3" ..
 ```
 
-**Configuration flags explained:**
-- `WITH_CUDA=ON` - Enable GPU support (uses ROCm/HIP)
-- `WITH_CUDNN=ON` - Enable MIOpen (AMD's cuDNN equivalent) for Conv1D operations
-- `WITH_MKL=OFF` - Disable Intel MKL (not needed for AMD)
-- `DOPENMP_RUNTIME=COMP` - Use LLVM/ROCm OpenMP instead of Intel OpenMP
-- `CMAKE_PREFIX_PATH="/opt/rocm"` - Help CMake find ROCm libraries
-- `AMDGPU_TARGETS=gfx1100` - Compile for your GPU architecture (adjust as needed)
+**Key CMake Flags:**
+*   `-DWITH_CUDA=ON`: Enables GPU support (required for ROCm/HIP).
+*   `-DWITH_CUDNN=ON`: Enables MIOpen support, which is crucial for models like Whisper (Conv1D).
+*   `-DCMAKE_HIP_ARCHITECTURES="gfx1100"`: **(Important!)** Set this to your GPU's architecture (e.g., `gfx1030`, `gfx90a`).
+*   `-DENABLE_CPU_DISPATCH=OFF`: Creates a GPU-only build for maximum performance.
 
-**Common GPU architectures:**
-- RX 7900 XT/XTX: `gfx1100`
-- RX 6900 XT: `gfx1030`
-- RX 6800/6800 XT: `gfx1030`
-- Check yours with: `rocminfo | grep gfx`
-
-### 3. Compile
-
+#### Step 2.3: Compile and Install
 ```bash
+# Compile the library
 make -j$(nproc)
-```
 
-### 4. Install System-wide (Required for Python binding)
-
-```bash
+# Install the library system-wide
 sudo make install
 sudo ldconfig
 ```
+This makes the `libctranslate2.so` library available to other applications, including the Python wrapper.
 
-This installs `libctranslate2.so` to `/usr/local/lib/` with MIOpen support.
+### 3. Build the Python Wheel
 
-## Building Python Package
+After installing the C++ library, you can build the Python package.
 
-### 1. Install Python Dependencies
-
+#### Step 3.1: Install Python Dependencies
 ```bash
 cd ../python
 pip install pybind11 setuptools wheel
 ```
 
-### 2. Build Wheel
-
-The `setup.py` has been modified to automatically include MIOpen and hipblas libraries for Linux builds.
+#### Step 3.2: Build the Wheel
+The `setup.py` in this fork is modified to automatically find and link the required ROCm libraries.
 
 ```bash
-export CTRANSLATE2_ROOT=/path/to/CTranslate2/build
 python setup.py bdist_wheel
 ```
 
-### 3. Install
-
+#### Step 3.3: Install the Wheel
 ```bash
 pip install dist/ctranslate2-*.whl
 ```
 
-## Verification
+### 4. Verification
 
-Test that MIOpen is properly linked:
+To ensure everything is working correctly, you can run a few quick checks.
+
+#### Check Library Links
+This script verifies that the Python extension is correctly linked against `libMIOpen`.
 
 ```python
 import ctranslate2._ext
 import subprocess
 
 so_path = ctranslate2._ext.__file__
-result = subprocess.run(['ldd', so_path], capture_output=True, text=True)
+linked_libs = subprocess.check_output(['ldd', so_path]).decode()
 
-# Should show libMIOpen.so.1
-for line in result.stdout.split('\n'):
-    if 'MIOpen' in line:
-        print(line)
+if 'libMIOpen.so' in linked_libs:
+    print("Successfully linked against MIOpen.")
+else:
+    print("MIOpen library not found. Please check the build process.")
 ```
 
-Test Conv1D operations on GPU:
+#### Test a Whisper Model
+This snippet demonstrates how to load a Whisper model and check for supported compute types. (Note: You need a CTranslate2-converted Whisper model for this to run).
 
 ```python
 import ctranslate2
 import numpy as np
 
-# Check supported compute types
-devices = ctranslate2.get_supported_compute_types('cuda')
-print(f'Supported compute types: {devices}')
+if not ctranslate2.get_supported_compute_types('cuda'):
+    raise RuntimeError("No GPU compute types available. The build may have failed.")
 
-# Load a Whisper model and test transcription
-# (requires downloaded Whisper model in CTranslate2 format)
+print("GPU support is enabled.")
+print(f"Supported compute types: {ctranslate2.get_supported_compute_types('cuda')}")
+
+# Example:
+# generator = ctranslate2.Generator("whisper-large-v3-ct2", device="cuda")
+# ...
 ```
 
-## Troubleshooting
+### 5. Troubleshooting
 
-### Error: "Conv1D on GPU currently requires the cuDNN library"
+**Q: I get the error "Conv1D on GPU currently requires the cuDNN library". What's wrong?**
+**A:** This happens when MIOpen is not correctly linked.
+1.  Ensure MIOpen is installed (`dpkg -l | grep miopen`).
+2.  Verify you used `-DWITH_CUDNN=ON` during the CMake configuration.
+3.  Delete the `build` directory and rebuild from scratch.
 
-This means `WITH_CUDNN=ON` was not enabled during CMake configuration, or MIOpen was not found.
+**Q: CMake fails with "hipblas not found".**
+**A:** You are missing the hipBLAS development package. Install it with:
+`sudo apt-get install hipblas-dev`
 
-**Solution:**
-1. Verify MIOpen is installed: `dpkg -l | grep miopen`
-2. Reconfigure with `WITH_CUDNN=ON`
-3. Check CMake output for: `WITH_CUDNN:BOOL=ON`
-4. Rebuild completely
+**Q: The Python wheel doesn't work or doesn't find the ROCm libraries.**
+**A:**
+1.  Confirm that you ran `sudo make install` and `sudo ldconfig` after compiling the C++ library.
+2.  Check that `ldd $(which python) | grep libctranslate2` shows the correct path.
+3.  Try rebuilding the wheel in a clean directory (`rm -rf build dist`).
 
-### Error: "hipblas not found" during CMake
+### 6. ROCm Build Notes
 
-**Solution:**
-```bash
-sudo apt-get install hipblas-dev
-```
+#### Key Features
+*   **Up-to-date:** Full compatibility with CTranslate2 v4.6.0.
+*   **Accelerated Operations:** Includes support for Flash Attention v2 and other GPU-accelerated features.
+*   **Wide Model Support:** Works with Whisper (large-v3-turbo), wav2vec2bert, and more.
 
-### Python package doesn't link MIOpen
+#### Known Limitations
+*   **AWQ (4-bit) Quantization**: This is **disabled** as it relies on NVIDIA-specific code (PTX). Using an AWQ model will result in a runtime error.
+    *   **Alternative**: Use `int8` or `float16` quantization, which are fully supported.
 
-**Solution:**
-1. Ensure `sudo make install` was run for libctranslate2
-2. Verify `/usr/local/lib/libctranslate2.so.3` has MIOpen: `ldd /usr/local/lib/libctranslate2.so.3 | grep MIOpen`
-3. Rebuild Python package with clean build: `rm -rf build dist && python setup.py bdist_wheel`
+#### Performance Recommendations
+*   **Compute Type**: Use `int8_float16` or `float16` for the best balance of speed and quality.
+*   **VRAM**: At least 12GB of VRAM is recommended for larger models like Whisper-large-v3.
+*   **ROCm Version**: Use ROCm 6.3.0 or newer for the best performance and stability.
 
-## What's New in v4.6.0 ROCm Build
-
-### Features
-- Full compatibility with upstream CTranslate2 v4.6.0
-- Flash Attention v2 support (GPU-accelerated)
-- Whisper large-v3-turbo support
-- wav2vec2bert model support
-- NCCL operations for multi-GPU (experimental)
-- Improved bfloat16 support
-
-### Known Limitations
-- AWQ quantization (INT4) is **disabled** - uses NVIDIA PTX assembly incompatible with ROCm
-  - Models with AWQ will throw runtime error: `"AWQ quantization is not supported in this ROCm build"`
-  - Alternative: Use CT2 native INT8 quantization instead
-
-### Recommended Settings
-- **Compute type**: `int8_float16` or `float16` for best performance
-- **VRAM**: 12GB+ for Whisper large models
-- **ROCm version**: 6.3.0+ for best stability
-
-## Performance Notes
-
-- **int8_float16** compute type recommended for best performance on AMD GPUs
-- Whisper large-v3 and large-v3-turbo run efficiently with 12GB+ VRAM
-- Flash Attention v2 provides significant speedup for long sequences
-- ROCm 6.3+ recommended for best stability
-
-## Credits
-
-- Original CTranslate2: [OpenNMT/CTranslate2](https://github.com/OpenNMT/CTranslate2)
-- ROCm v4.6.0 port and compatibility fixes: [@dapovoa](https://github.com/dapovoa)
+---
+*This guide is maintained by [@dapovoa](https://github.com/dapovoa) as part of the CTranslate2 ROCm port.*
