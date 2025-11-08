@@ -1,74 +1,6 @@
-[![CI](https://github.com/dapovoa/CTranslate2/workflows/CI/badge.svg)](https://github.com/dapovoa/CTranslate2/actions?query=workflow%3ACI) [![PyPI version](https://badge.fury.io/py/ctranslate2.svg)](https://badge.fury.io/py/ctranslate2) [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://opennmt.net/CTranslate2/) [![Gitter](https://badges.gitter.im/OpenNMT/CTranslate2.svg)](https://gitter.im/OpenNMT/CTranslate2?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Forum](https://img.shields.io/discourse/status?server=https%3A%2F%2Fforum.opennmt.net%2F)](https://forum.opennmt.net/) [![ROCm](https://img.shields.io/badge/ROCm-6.3.1-red.svg)](BUILD_ROCM.md) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/OpenNMT/CTranslate2/workflows/CI/badge.svg)](https://github.com/OpenNMT/CTranslate2/actions?query=workflow%3ACI) [![PyPI version](https://badge.fury.io/py/ctranslate2.svg)](https://badge.fury.io/py/ctranslate2) [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://opennmt.net/CTranslate2/) [![Gitter](https://badges.gitter.im/OpenNMT/CTranslate2.svg)](https://gitter.im/OpenNMT/CTranslate2?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Forum](https://img.shields.io/discourse/status?server=https%3A%2F%2Fforum.opennmt.net%2F)](https://forum.opennmt.net/)
 
-# CTranslate2 for AMD ROCm
-
-This is a fork of [OpenNMT/CTranslate2](https://github.com/OpenNMT/CTranslate2) and [ROCm/CTranslate2](https://github.com/ROCm/CTranslate2) providing optimized support for AMD GPUs using the ROCm platform.
-
-**Latest Release:** [v4.6.0-rocm6.3.1](https://github.com/dapovoa/CTranslate2/releases/tag/v4.6.0-rocm6.3.1) - CTranslate2 v4.6.0 with GPU-only build, ROCm 6.3.1 compatibility, and full MIOpen support for Whisper models.
-
-## What's New in v4.6.0-rocm6.3.1
-
-*   **GPU-only build** - Disabled CPU dispatch kernels for cleaner GPU-focused implementation
-*   **Build script verification** - Automated checks for GPU-only configuration
-*   **Improved CMake configuration** - Enhanced GPU-only enforcement
-*   **ROCm 6.3.1 compatibility** - Tested on ROCm 6.3.1 with gfx1100
-*   **MIOpen integration** - Full Conv1D support for Whisper and speech models
-*   **Faster-Whisper support** - Compatible with `faster-whisper` Python package
-
-## Key Features
-
-*   **Modern ROCm Support (6.2+ and 7.x)**
-    *   Updated to work with ROCm 6.2.4, 6.3.x, and 7.0.1, handling API changes automatically at compile time.
-
-*   **Whisper Models Work Out-of-the-Box**
-    *   Fixed the common `"Conv1D on GPU currently requires the cuDNN library"` error by properly linking to MIOpen (AMD's equivalent of cuDNN).
-
-*   **GPU-Only for Peak Performance**
-    *   This build is intentionally **GPU-only**. CPU dispatch kernels are disabled to maximize performance for real-time inference. For CPU-based tasks, use the official CTranslate2 package.
-
-*   **Automated Build Script**
-    *   The included `build_rocm.sh` script handles the entire build process, from detecting your GPU architecture to creating a Python wheel.
-
-## Getting Started
-
-### Using Pre-Built Wheels (Recommended)
-
-Download the latest wheel from the [Releases](https://github.com/dapovoa/CTranslate2/releases) page:
-
-```bash
-pip install ctranslate2-4.6.0+rocm6.3.1-cp312-cp312-linux_x86_64.whl
-```
-
-**Requirements:**
-- ROCm 6.3.1 (tested on gfx1100)
-- AMD Radeon RX 7900 XTX or compatible RDNA3 GPU
-- Python 3.12
-- Ubuntu 24.04 LTS (or compatible)
-
-### Building from Source
-
-If you need to build for a specific configuration, you can build from source.
-
-1.  **Clone the repository:**
-    ```bash
-    git clone --branch amd_dev_v4.6.0_rocm6.3 --recursive https://github.com/dapovoa/CTranslate2.git
-    cd CTranslate2
-    ```
-
-2.  **Run the build script:**
-    ```bash
-    ./build_rocm.sh
-    ```
-    This script will automate the build. For manual build steps and advanced configuration, see [BUILD_ROCM.md](BUILD_ROCM.md).
-
-## Tested Configurations
-
-This fork has been tested on the following configurations:
-
-*   **Primary:** ROCm 6.3.1 on AMD Radeon RX 7900 XTX (gfx1100), Ubuntu 24.04 LTS, Python 3.12
-*   **Also tested:** ROCm 6.2.4 and 7.0.1 on AMD Radeon RX 7900 XT (gfx1100)
-
----
+# CTranslate2
 
 CTranslate2 is a C++ and Python library for efficient inference with Transformer models.
 
@@ -77,7 +9,7 @@ The project implements a custom runtime that applies many performance optimizati
 The following model types are currently supported:
 
 * Encoder-decoder models: Transformer base/big, M2M-100, NLLB, BART, mBART, Pegasus, T5, Whisper
-* Decoder-only models: GPT-2, GPT-J, GPT-NeoX, OPT, BLOOM, MPT, Llama, Mistral, Gemma, CodeGen, GPTBigCode, Falcon, Qwen2
+* Decoder-only models: GPT-2, GPT-J, GPT-NeoX, OPT, BLOOM, MPT, Llama, Mistral, CodeGen, GPTBigCode, Falcon
 * Encoder-only models: BERT, DistilBERT, XLM-RoBERTa
 
 Compatible models should be first converted into an optimized model format. The library includes converters for multiple frameworks:
@@ -94,7 +26,7 @@ The project is production-oriented and comes with [backward compatibility guaran
 ## Key features
 
 * **Fast and efficient execution on CPU and GPU**<br/>The execution [is significantly faster and requires less resources](#benchmarks) than general-purpose deep learning frameworks on supported models and tasks thanks to many advanced optimizations: layer fusion, padding removal, batch reordering, in-place operations, caching mechanism, etc.
-* **Quantization and reduced precision**<br/>The model serialization and computation support weights with [reduced precision](https://opennmt.net/CTranslate2/quantization.html): 16-bit floating points (FP16), 16-bit brain floating points (BF16), 16-bit integers (INT16), 8-bit integers (INT8) and AWQ quantization (INT4).
+* **Quantization and reduced precision**<br/>The model serialization and computation support weights with [reduced precision](https://opennmt.net/CTranslate2/quantization.html): 16-bit floating points (FP16), 16-bit brain floating points (BF16), 16-bit integers (INT16), and 8-bit integers (INT8).
 * **Multiple CPU architectures support**<br/>The project supports x86-64 and AArch64/ARM64 processors and integrates multiple backends that are optimized for these platforms: [Intel MKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/components/onemkl.html), [oneDNN](https://github.com/oneapi-src/oneDNN), [OpenBLAS](https://www.openblas.net/), [Ruy](https://github.com/google/ruy), and [Apple Accelerate](https://developer.apple.com/documentation/accelerate).
 * **Automatic CPU detection and code dispatch**<br/>One binary can include multiple backends (e.g. Intel MKL and oneDNN) and instruction set architectures (e.g. AVX, AVX2) that are automatically selected at runtime based on the CPU information.
 * **Parallel and asynchronous execution**<br/>Multiple batches can be processed in parallel and asynchronously using multiple GPUs or CPU cores.
@@ -102,30 +34,29 @@ The project is production-oriented and comes with [backward compatibility guaran
 * **Lightweight on disk**<br/>Quantization can make the models 4 times smaller on disk with minimal accuracy loss.
 * **Simple integration**<br/>The project has few dependencies and exposes simple APIs in [Python](https://opennmt.net/CTranslate2/python/overview.html) and C++ to cover most integration needs.
 * **Configurable and interactive decoding**<br/>[Advanced decoding features](https://opennmt.net/CTranslate2/decoding.html) allow autocompleting a partial sequence and returning alternatives at a specific location in the sequence.
-* **Support tensor parallelism for distributed inference**<br/>Very large model can be split into multiple GPUs. Following this [documentation](docs/parallel.md#model-and-tensor-parallelism) to set up the required environment.
 
 Some of these features are difficult to achieve with standard deep learning frameworks and are the motivation for this project.
 
 ## Installation and usage
 
-The official CTranslate2 package can be installed from PyPI and supports NVIDIA GPUs and CPUs:
+CTranslate2 can be installed with pip:
 
 ```bash
 pip install ctranslate2
 ```
 
-For AMD ROCm support, please follow the instructions in the **Getting Started** section above.
+To build docker image for ROCm AMD GPUs
 
-Once installed, the Python module can be used to convert models and then perform translation or text generation:
+```bash
+please checkout amd_dev branch;   cd docker_rocm;   docker build -t   rocm_ct2_v3.23.0 -f Dockerfile.rocm . 
+```
+
+The Python module is used to convert models and can translate or generate text with few lines of code:
 
 ```python
-import ctranslate2
-
-# Example for translation
 translator = ctranslate2.Translator(translation_model_path)
 translator.translate_batch(tokens)
 
-# Example for generation
 generator = ctranslate2.Generator(generation_model_path)
 generator.generate_batch(start_tokens)
 ```
