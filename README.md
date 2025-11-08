@@ -1,131 +1,174 @@
-[![CI](https://github.com/OpenNMT/CTranslate2/workflows/CI/badge.svg)](https://github.com/OpenNMT/CTranslate2/actions?query=workflow%3ACI) [![PyPI version](https://badge.fury.io/py/ctranslate2.svg)](https://badge.fury.io/py/ctranslate2) [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://opennmt.net/CTranslate2/) [![Gitter](https://badges.gitter.im/OpenNMT/CTranslate2.svg)](https://gitter.im/OpenNMT/CTranslate2?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Forum](https://img.shields.io/discourse/status?server=https%3A%2F%2Fforum.opennmt.net%2F)](https://forum.opennmt.net/)
+[![CI](https://github.com/dapovoa/CTranslate2/workflows/CI/badge.svg)](https://github.com/dapovoa/CTranslate2/actions?query=workflow%3ACI) [![Release](https://img.shields.io/github/v/release/dapovoa/CTranslate2)](https://github.com/dapovoa/CTranslate2/releases/latest) [![ROCm](https://img.shields.io/badge/ROCm-6.3.1-red.svg)](BUILD_ROCM.md) [![CTranslate2](https://img.shields.io/badge/CTranslate2-v4.6.0-blue.svg)](https://github.com/OpenNMT/CTranslate2) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-# CTranslate2
+# CTranslate2 - AMD ROCm Fork
 
-CTranslate2 is a C++ and Python library for efficient inference with Transformer models.
+This is a fork of [ROCm/CTranslate2](https://github.com/ROCm/CTranslate2) (AMD's official ROCm port of [OpenNMT/CTranslate2](https://github.com/OpenNMT/CTranslate2)), providing upgraded and optimized Transformer model inference on AMD GPUs.
 
-The project implements a custom runtime that applies many performance optimization techniques such as weights quantization, layers fusion, batch reordering, etc., to [accelerate and reduce the memory usage](#benchmarks) of Transformer models on CPU and GPU.
+**Latest Release:** [v4.6.0-rocm6.3.1](https://github.com/dapovoa/CTranslate2/releases/tag/v4.6.0-rocm6.3.1) | **Upstream:** [ROCm/CTranslate2](https://github.com/ROCm/CTranslate2)
 
-The following model types are currently supported:
+---
 
-* Encoder-decoder models: Transformer base/big, M2M-100, NLLB, BART, mBART, Pegasus, T5, Whisper
-* Decoder-only models: GPT-2, GPT-J, GPT-NeoX, OPT, BLOOM, MPT, Llama, Mistral, CodeGen, GPTBigCode, Falcon
-* Encoder-only models: BERT, DistilBERT, XLM-RoBERTa
+## What This Fork Provides
 
-Compatible models should be first converted into an optimized model format. The library includes converters for multiple frameworks:
+The official ROCm fork (ROCm/CTranslate2) is currently at v3.23.0 and targets ROCm 6.1. This fork brings several important improvements:
 
-* [OpenNMT-py](https://opennmt.net/CTranslate2/guides/opennmt_py.html)
-* [OpenNMT-tf](https://opennmt.net/CTranslate2/guides/opennmt_tf.html)
-* [Fairseq](https://opennmt.net/CTranslate2/guides/fairseq.html)
-* [Marian](https://opennmt.net/CTranslate2/guides/marian.html)
-* [OPUS-MT](https://opennmt.net/CTranslate2/guides/opus_mt.html)
-* [Transformers](https://opennmt.net/CTranslate2/guides/transformers.html)
+### Core Upgrades
 
-The project is production-oriented and comes with [backward compatibility guarantees](https://opennmt.net/CTranslate2/versioning.html), but it also includes experimental features related to model compression and inference acceleration.
+**CTranslate2 v4.6.0**
+- Upgraded from v3.23.0 to v4.6.0, bringing 70+ upstream commits
+- Includes support for newer models: Gemma 2, Qwen2, Phi-3, Mistral Nemo
+- Flash Attention support for faster inference
+- AWQ quantization (INT4) for smaller models
+- Tensor parallelism for multi-GPU inference
 
-## Key features
+### ROCm Compatibility
 
-* **Fast and efficient execution on CPU and GPU**<br/>The execution [is significantly faster and requires less resources](#benchmarks) than general-purpose deep learning frameworks on supported models and tasks thanks to many advanced optimizations: layer fusion, padding removal, batch reordering, in-place operations, caching mechanism, etc.
-* **Quantization and reduced precision**<br/>The model serialization and computation support weights with [reduced precision](https://opennmt.net/CTranslate2/quantization.html): 16-bit floating points (FP16), 16-bit brain floating points (BF16), 16-bit integers (INT16), and 8-bit integers (INT8).
-* **Multiple CPU architectures support**<br/>The project supports x86-64 and AArch64/ARM64 processors and integrates multiple backends that are optimized for these platforms: [Intel MKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/components/onemkl.html), [oneDNN](https://github.com/oneapi-src/oneDNN), [OpenBLAS](https://www.openblas.net/), [Ruy](https://github.com/google/ruy), and [Apple Accelerate](https://developer.apple.com/documentation/accelerate).
-* **Automatic CPU detection and code dispatch**<br/>One binary can include multiple backends (e.g. Intel MKL and oneDNN) and instruction set architectures (e.g. AVX, AVX2) that are automatically selected at runtime based on the CPU information.
-* **Parallel and asynchronous execution**<br/>Multiple batches can be processed in parallel and asynchronously using multiple GPUs or CPU cores.
-* **Dynamic memory usage**<br/>The memory usage changes dynamically depending on the request size while still meeting performance requirements thanks to caching allocators on both CPU and GPU.
-* **Lightweight on disk**<br/>Quantization can make the models 4 times smaller on disk with minimal accuracy loss.
-* **Simple integration**<br/>The project has few dependencies and exposes simple APIs in [Python](https://opennmt.net/CTranslate2/python/overview.html) and C++ to cover most integration needs.
-* **Configurable and interactive decoding**<br/>[Advanced decoding features](https://opennmt.net/CTranslate2/decoding.html) allow autocompleting a partial sequence and returning alternatives at a specific location in the sequence.
+**Modern ROCm Support (6.2+, 6.3+, 7.0+)**
+- Updated HIP API calls for ROCm 6.3+ compatibility
+- Automatic hipBLAS API version detection at compile time
+- Fixed include paths for ROCm 6.3 header reorganization
+- Tested on ROCm 6.2.4, 6.3.0, 6.3.1, and 7.0.1
 
-Some of these features are difficult to achieve with standard deep learning frameworks and are the motivation for this project.
+### Whisper and Speech Models
 
-## Installation and usage
+**MIOpen Integration**
+- Properly links MIOpen (AMD's cuDNN equivalent)
+- Fixes the common "Conv1D on GPU currently requires the cuDNN library" error
+- Full Conv1D support for Whisper, Wav2Vec2, and Wav2Vec2Bert models
+- Compatible with `faster-whisper` Python package
 
-CTranslate2 can be installed with pip:
+### Build Improvements
+
+**GPU-Only Build Configuration**
+- Disabled CPU dispatch kernels (`ENABLE_CPU_DISPATCH=OFF`)
+- Removed CPU backend dependencies (DNNL, OpenBLAS)
+- Cleaner GPU-focused implementation
+- Automated verification checks in build script
+
+**Automated Build Script**
+- `build_rocm.sh` handles entire build process
+- Auto-detects GPU architecture (gfx1100, etc.)
+- Builds both C++ library and Python wheel
+- Includes CMake cache verification and symbol checks
+
+---
+
+## Quick Start
+
+### Installation from Pre-Built Wheel
+
+Download the latest wheel from [Releases](https://github.com/dapovoa/CTranslate2/releases):
 
 ```bash
-pip install ctranslate2
+pip install ctranslate2-4.6.0+rocm6.3.1-cp312-cp312-linux_x86_64.whl
 ```
 
-To build docker image for ROCm AMD GPUs
+**System Requirements:**
+- ROCm 6.3.1 (ROCm 6.2+ and 7.0+ also supported)
+- AMD Radeon RX 7900 XTX or compatible RDNA3 GPU (gfx1100)
+- Python 3.12
+- Ubuntu 24.04 LTS (or compatible Linux distribution)
+
+### Build from Source
 
 ```bash
-please checkout amd_dev branch;   cd docker_rocm;   docker build -t   rocm_ct2_v3.23.0 -f Dockerfile.rocm . 
+# Clone with submodules
+git clone --branch amd_dev_v4.6.0_rocm6.3 --recursive https://github.com/dapovoa/CTranslate2.git
+cd CTranslate2
+
+# Run automated build script
+./build_rocm.sh
+
+# Python wheel will be in python/dist/
 ```
 
-The Python module is used to convert models and can translate or generate text with few lines of code:
+For detailed build instructions and manual build steps, see [BUILD_ROCM.md](BUILD_ROCM.md).
 
-```python
-translator = ctranslate2.Translator(translation_model_path)
-translator.translate_batch(tokens)
+---
 
-generator = ctranslate2.Generator(generation_model_path)
-generator.generate_batch(start_tokens)
+## Technical Details
+
+### Build Configuration
+
+This fork uses the following CMake configuration:
+
+```cmake
+-DCMAKE_BUILD_TYPE=Release
+-DWITH_CUDA=ON                    # HIP uses CUDA flag
+-DWITH_CUDNN=ON                   # MIOpen uses CUDNN flag
+-DWITH_MKL=OFF
+-DWITH_DNNL=OFF
+-DWITH_OPENBLAS=OFF
+-DOPENMP_RUNTIME=NONE
+-DENABLE_CPU_DISPATCH=OFF         # GPU-only build
+-DGPU_RUNTIME=HIP
+-DCMAKE_CXX_COMPILER=/opt/rocm/bin/hipcc
+-DAMDGPU_TARGETS=gfx1100
 ```
 
-See the [documentation](https://opennmt.net/CTranslate2) for more information and examples.
+### Key Implementation Changes
 
-## Benchmarks
+**CUDA to HIP Translation**
+- Custom header files for CUDA→HIP compatibility:
+  - `src/cuda2hip_macros.hpp` - CUDA/HIP macro translations
+  - `src/cuda2hip_types.hpp` - C++ type compatibility layer
+  - `src/cuda2hip_device.hpp` - Device function mappings
+- CUB→hipCUB and cuRAND→hipRAND namespace mappings
+- Thrust device system set to `THRUST_DEVICE_SYSTEM_HIP`
 
-We translate the En->De test set *newstest2014* with multiple models:
+**ROCm 6.3+ Compatibility**
+- Updated hipBLAS include paths (`hipblas/hipblas.h`)
+- Added ROCm include directories to `CMAKE_CXX_FLAGS`
+- ROCPrim type traits fixes for ROCm 6.3
+- Conditional compilation based on hipBLAS version
 
-* [OpenNMT-tf WMT14](https://opennmt.net/Models-tf/#translation): a base Transformer trained with OpenNMT-tf on the WMT14 dataset (4.5M lines)
-* [OpenNMT-py WMT14](https://opennmt.net/Models-py/#translation): a base Transformer trained with OpenNMT-py on the WMT14 dataset (4.5M lines)
-* [OPUS-MT](https://github.com/Helsinki-NLP/OPUS-MT-train/tree/master/models/en-de#opus-2020-02-26zip): a base Transformer trained with Marian on all OPUS data available on 2020-02-26 (81.9M lines)
+**MIOpen Conv1D**
+- Proper MIOpen library linking in CMakeLists.txt
+- Conv1D GPU kernel implementation for Whisper models
+- Tested with faster-whisper on real-time audio streams
 
-The benchmark reports the number of target tokens generated per second (higher is better). The results are aggregated over multiple runs. See the [benchmark scripts](tools/benchmark) for more details and reproduce these numbers.
+---
 
-**Please note that the results presented below are only valid for the configuration used during this benchmark: absolute and relative performance may change with different settings.**
+## Tested Configurations
 
-#### CPU
+**Primary Configuration:**
+- ROCm 6.3.1
+- AMD Radeon RX 7900 XTX (gfx1100)
+- Ubuntu 24.04 LTS
+- Python 3.12
 
-| | Tokens per second | Max. memory | BLEU |
-| --- | --- | --- | --- |
-| **OpenNMT-tf WMT14 model** | | | |
-| OpenNMT-tf 2.31.0 (with TensorFlow 2.11.0) | 209.2 | 2653MB | 26.93 |
-| **OpenNMT-py WMT14 model** | | | |
-| OpenNMT-py 3.0.4 (with PyTorch 1.13.1) | 275.8 | 2012MB | 26.77 |
-| - int8 | 323.3 | 1359MB | 26.72 |
-| CTranslate2 3.6.0 | 658.8 | 849MB | 26.77 |
-| - int16 | 733.0 | 672MB | 26.82 |
-| - int8 | 860.2 | 529MB | 26.78 |
-| - int8 + vmap | 1126.2 | 598MB | 26.64 |
-| **OPUS-MT model** | | | |
-| Transformers 4.26.1 (with PyTorch 1.13.1) | 147.3 | 2332MB | 27.90 |
-| Marian 1.11.0 | 344.5 | 7605MB | 27.93 |
-| - int16 | 330.2 | 5901MB | 27.65 |
-| - int8 | 355.8 | 4763MB | 27.27 |
-| CTranslate2 3.6.0 | 525.0 | 721MB | 27.92 |
-| - int16 | 596.1 | 660MB | 27.53 |
-| - int8 | 696.1 | 516MB | 27.65 |
+**Also Tested:**
+- ROCm 6.2.4 on AMD Radeon RX 7900 XT (gfx1100)
+- ROCm 7.0.1 on AMD Radeon RX 7900 XT (gfx1100)
 
-Executed with 4 threads on a [*c5.2xlarge*](https://aws.amazon.com/ec2/instance-types/c5/) Amazon EC2 instance equipped with an Intel(R) Xeon(R) Platinum 8275CL CPU.
+**Verified Models:**
+- Whisper (all sizes) via faster-whisper
+- BERT, DistilBERT
+- GPT-2, Llama, Mistral
+- T5, BART
 
-#### GPU
+---
 
-| | Tokens per second | Max. GPU memory | Max. CPU memory | BLEU |
-| --- | --- | --- | --- | --- |
-| **OpenNMT-tf WMT14 model** | | | | |
-| OpenNMT-tf 2.31.0 (with TensorFlow 2.11.0) | 1483.5 | 3031MB | 3122MB | 26.94 |
-| **OpenNMT-py WMT14 model** | | | | |
-| OpenNMT-py 3.0.4 (with PyTorch 1.13.1) | 1795.2 | 2973MB | 3099MB | 26.77 |
-| FasterTransformer 5.3 | 6979.0 | 2402MB | 1131MB | 26.77 |
-| - float16 | 8592.5 | 1360MB | 1135MB | 26.80 |
-| CTranslate2 3.6.0 | 6634.7 | 1261MB | 953MB | 26.77 |
-| - int8 | 8567.2 | 1005MB | 807MB | 26.85 |
-| - float16 | 10990.7 | 941MB | 807MB | 26.77 |
-| - int8 + float16 | 8725.4 | 813MB | 800MB | 26.83 |
-| **OPUS-MT model** | | | | |
-| Transformers 4.26.1 (with PyTorch 1.13.1) | 1022.9 | 4097MB | 2109MB | 27.90 |
-| Marian 1.11.0 | 3241.0 | 3381MB | 2156MB | 27.92 |
-| - float16 | 3962.4 | 3239MB | 1976MB | 27.94 |
-| CTranslate2 3.6.0 | 5876.4 | 1197MB | 754MB | 27.92 |
-| - int8 | 7521.9 | 1005MB | 792MB | 27.79 |
-| - float16 | 9296.7 | 909MB | 814MB | 27.90 |
-| - int8 + float16 | 8362.7 | 813MB | 766MB | 27.90 |
+## About CTranslate2
 
-Executed with CUDA 11 on a [*g5.xlarge*](https://aws.amazon.com/ec2/instance-types/g5/) Amazon EC2 instance equipped with a NVIDIA A10G GPU (driver version: 510.47.03).
+CTranslate2 is a C++ and Python library for efficient inference with Transformer models. It implements a custom runtime that applies many performance optimization techniques:
 
-## Additional resources
+**Core Features:**
+- Weights quantization: FP16, BF16, INT16, INT8, AWQ (INT4)
+- Layer fusion and padding removal
+- Batch reordering and in-place operations
+- Dynamic memory usage with caching allocators
+- Parallel and asynchronous execution
 
-* [Documentation](https://opennmt.net/CTranslate2)
-* [Forum](https://forum.opennmt.net)
-* [Gitter](https://gitter.im/OpenNMT/CTranslate2)
+**Supported Model Types:**
+- **Encoder-decoder:** Transformer, M2M-100, NLLB, BART, mBART, Pegasus, T5, Whisper
+- **Decoder-only:** GPT-2, GPT-J, GPT-NeoX, OPT, BLOOM, MPT, Llama, Mistral, Gemma, CodeGen, Falcon, Qwen2
+- **Encoder-only:** BERT, DistilBERT, XLM-RoBERTa
+
+For complete CTranslate2 documentation, see [opennmt.net/CTranslate2](https://opennmt.net/CTranslate2/).
+
+---
+
+## License
+
+This project maintains the same MIT License as the upstream [OpenNMT/CTranslate2](https://github.com/OpenNMT/CTranslate2).
