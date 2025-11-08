@@ -69,7 +69,10 @@ configure_cmake() {
         -DWITH_CUDA=ON \
         -DWITH_CUDNN=ON \
         -DWITH_MKL=OFF \
+        -DWITH_DNNL=OFF \
+        -DWITH_OPENBLAS=OFF \
         -DOPENMP_RUNTIME=NONE \
+        -DENABLE_CPU_DISPATCH=OFF \
         -DCMAKE_PREFIX_PATH="/opt/rocm" \
         -DCMAKE_CXX_COMPILER=/opt/rocm/bin/hipcc \
         -DAMDGPU_TARGETS=${ARCH} \
@@ -80,6 +83,13 @@ configure_cmake() {
         echo -e "${GREEN}✓ MIOpen (cuDNN) support enabled${NC}"
     else
         echo -e "${RED}✗ MIOpen support NOT enabled. Check CMake output above.${NC}"
+        exit 1
+    fi
+
+    if grep -q "ENABLE_CPU_DISPATCH:BOOL=OFF" CMakeCache.txt; then
+        echo -e "${GREEN}✓ CPU dispatch disabled (GPU-only build)${NC}"
+    else
+        echo -e "${RED}✗ CPU dispatch NOT disabled. GPU-only build failed.${NC}"
         exit 1
     fi
 
@@ -99,6 +109,14 @@ build_library() {
     else
         echo -e "${RED}✗ MIOpen not linked. Build may be incomplete.${NC}"
         exit 1
+    fi
+
+    # Verify GPU-only build (no AVX CPU kernels)
+    AVX_COUNT=$(nm libctranslate2.so | grep -i avx | wc -l)
+    if [ $AVX_COUNT -eq 0 ]; then
+        echo -e "${GREEN}✓ GPU-only build confirmed (no AVX symbols)${NC}"
+    else
+        echo -e "${YELLOW}⚠ Warning: Found ${AVX_COUNT} AVX symbols (CPU kernels present)${NC}"
     fi
 
     cd ..
