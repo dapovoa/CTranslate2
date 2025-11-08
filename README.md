@@ -2,173 +2,114 @@
 
 # CTranslate2 - AMD ROCm Fork
 
-This is a fork of [ROCm/CTranslate2](https://github.com/ROCm/CTranslate2) (AMD's official ROCm port of [OpenNMT/CTranslate2](https://github.com/OpenNMT/CTranslate2)), providing upgraded and optimized Transformer model inference on AMD GPUs.
+This is a fork of [ROCm/CTranslate2](https://github.com/ROCm/CTranslate2), which is AMD's official ROCm port of [OpenNMT/CTranslate2](https://github.com/OpenNMT/CTranslate2). It brings CTranslate2 v4.6.0 support, modern ROCm compatibility, and proper MIOpen integration for Whisper models.
 
-**Latest Release:** [v4.6.0-rocm6.3.1](https://github.com/dapovoa/CTranslate2/releases/tag/v4.6.0-rocm6.3.1) | **Upstream:** [ROCm/CTranslate2](https://github.com/ROCm/CTranslate2)
+**Latest Release:** [v4.6.0-rocm6.3.1](https://github.com/dapovoa/CTranslate2/releases/latest) | **Upstream:** [ROCm/CTranslate2](https://github.com/ROCm/CTranslate2)
 
 ---
 
-## What This Fork Provides
+## What This Adds
 
-The official ROCm fork (ROCm/CTranslate2) is currently at v3.23.0 and targets ROCm 6.1. This fork brings several important improvements:
+The official ROCm fork is at CTranslate2 v3.23.0 and targets ROCm 6.1. This fork updates things significantly:
 
-### Core Upgrades
+**Core Upgrades**
+- **CTranslate2 v4.6.0** - Jumped from v3.23.0, bringing 70+ upstream commits
+- **Modern ROCm** - Works with ROCm 6.2.4, 6.3.x, and 7.0.1
+- **MIOpen working** - Fixed the "Conv1D requires cuDNN" error that breaks Whisper
+- **GPU-only builds** - Removed CPU dispatch kernels for cleaner implementation
+- **Automated building** - The `build_rocm.sh` script handles everything
 
-**CTranslate2 v4.6.0**
-- Upgraded from v3.23.0 to v4.6.0, bringing 70+ upstream commits
-- Includes support for newer models: Gemma 2, Qwen2, Phi-3, Mistral Nemo
-- Flash Attention support for faster inference
-- AWQ quantization (INT4) for smaller models
-- Tensor parallelism for multi-GPU inference
+**New Stuff from v4.6.0**
+- Support for newer models: Gemma 2, Qwen2, Phi-3, Mistral Nemo
+- Flash Attention for faster inference
+- AWQ quantization (INT4) for smaller models on disk
+- Tensor parallelism if you have multiple GPUs
 
-### ROCm Compatibility
-
-**Modern ROCm Support (6.2+, 6.3+, 7.0+)**
-- Updated HIP API calls for ROCm 6.3+ compatibility
-- Automatic hipBLAS API version detection at compile time
-- Fixed include paths for ROCm 6.3 header reorganization
-- Tested on ROCm 6.2.4, 6.3.0, 6.3.1, and 7.0.1
-
-### Whisper and Speech Models
-
-**MIOpen Integration**
-- Properly links MIOpen (AMD's cuDNN equivalent)
-- Fixes the common "Conv1D on GPU currently requires the cuDNN library" error
-- Full Conv1D support for Whisper, Wav2Vec2, and Wav2Vec2Bert models
-- Compatible with `faster-whisper` Python package
-
-### Build Improvements
-
-**GPU-Only Build Configuration**
-- Disabled CPU dispatch kernels (`ENABLE_CPU_DISPATCH=OFF`)
-- Removed CPU backend dependencies (DNNL, OpenBLAS)
-- Cleaner GPU-focused implementation
-- Automated verification checks in build script
-
-**Automated Build Script**
-- `build_rocm.sh` handles entire build process
-- Auto-detects GPU architecture (gfx1100, etc.)
-- Builds both C++ library and Python wheel
-- Includes CMake cache verification and symbol checks
+Full details in the [release notes](https://github.com/dapovoa/CTranslate2/releases/latest).
 
 ---
 
 ## Quick Start
 
-### Installation from Pre-Built Wheel
+### Using Pre-Built Wheels
 
-Download the latest wheel from [Releases](https://github.com/dapovoa/CTranslate2/releases):
+Grab the wheel from [Releases](https://github.com/dapovoa/CTranslate2/releases):
 
 ```bash
 pip install ctranslate2-4.6.0+rocm6.3.1-cp312-cp312-linux_x86_64.whl
 ```
 
-**System Requirements:**
-- ROCm 6.3.1 (ROCm 6.2+ and 7.0+ also supported)
-- AMD Radeon RX 7900 XTX or compatible RDNA3 GPU (gfx1100)
+**What you need:**
+- ROCm 6.3.1 (also works with 6.2.4 and 7.0.1)
+- AMD Radeon RX 7900 XTX or similar RDNA3 GPU (gfx1100)
 - Python 3.12
-- Ubuntu 24.04 LTS (or compatible Linux distribution)
+- Ubuntu 24.04 LTS or compatible
 
-### Build from Source
+### Building from Source
 
 ```bash
-# Clone with submodules
 git clone --branch amd_dev_v4.6.0_rocm6.3 --recursive https://github.com/dapovoa/CTranslate2.git
 cd CTranslate2
-
-# Run automated build script
 ./build_rocm.sh
-
-# Python wheel will be in python/dist/
 ```
 
-For detailed build instructions and manual build steps, see [BUILD_ROCM.md](BUILD_ROCM.md).
+The script detects your GPU and builds everything. Python wheel ends up in `python/dist/`.
+
+For manual build steps, check [BUILD_ROCM.md](BUILD_ROCM.md).
 
 ---
 
 ## Technical Details
 
-### Build Configuration
+**ROCm 6.3+ Compatibility**
 
-This fork uses the following CMake configuration:
-
-```cmake
--DCMAKE_BUILD_TYPE=Release
--DWITH_CUDA=ON                    # HIP uses CUDA flag
--DWITH_CUDNN=ON                   # MIOpen uses CUDNN flag
--DWITH_MKL=OFF
--DWITH_DNNL=OFF
--DWITH_OPENBLAS=OFF
--DOPENMP_RUNTIME=NONE
--DENABLE_CPU_DISPATCH=OFF         # GPU-only build
--DGPU_RUNTIME=HIP
--DCMAKE_CXX_COMPILER=/opt/rocm/bin/hipcc
--DAMDGPU_TARGETS=gfx1100
-```
-
-### Key Implementation Changes
+ROCm 6.3 changed a bunch of header locations and API signatures. This fork handles that with automatic hipBLAS version detection at compile time and updated include paths. It's been tested on ROCm 6.2.4, 6.3.0, 6.3.1, and 7.0.1.
 
 **CUDA to HIP Translation**
-- Custom header files for CUDA→HIP compatibility:
-  - `src/cuda2hip_macros.hpp` - CUDA/HIP macro translations
-  - `src/cuda2hip_types.hpp` - C++ type compatibility layer
-  - `src/cuda2hip_device.hpp` - Device function mappings
-- CUB→hipCUB and cuRAND→hipRAND namespace mappings
-- Thrust device system set to `THRUST_DEVICE_SYSTEM_HIP`
 
-**ROCm 6.3+ Compatibility**
-- Updated hipBLAS include paths (`hipblas/hipblas.h`)
-- Added ROCm include directories to `CMAKE_CXX_FLAGS`
-- ROCPrim type traits fixes for ROCm 6.3
-- Conditional compilation based on hipBLAS version
+Since CTranslate2 was originally CUDA-only, there are custom compatibility headers that map CUDA calls to HIP:
+- `cuda2hip_macros.hpp` for macro translations
+- `cuda2hip_types.hpp` for type compatibility
+- `cuda2hip_device.hpp` for device function mappings
 
-**MIOpen Conv1D**
-- Proper MIOpen library linking in CMakeLists.txt
-- Conv1D GPU kernel implementation for Whisper models
-- Tested with faster-whisper on real-time audio streams
+Plus namespace remapping for CUB to hipCUB and cuRAND to hipRAND.
+
+**MIOpen Integration**
+
+The upstream ROCm fork had incomplete MIOpen linking, which caused Conv1D operations to fail. This is now properly configured in CMakeLists.txt, so Whisper models work correctly. Tested extensively with `faster-whisper` for real-time audio transcription.
 
 ---
 
-## Tested Configurations
+## What's Been Tested
 
-**Primary Configuration:**
+**Main setup:**
 - ROCm 6.3.1
 - AMD Radeon RX 7900 XTX (gfx1100)
 - Ubuntu 24.04 LTS
 - Python 3.12
 
-**Also Tested:**
-- ROCm 6.2.4 on AMD Radeon RX 7900 XT (gfx1100)
-- ROCm 7.0.1 on AMD Radeon RX 7900 XT (gfx1100)
+**Also verified on:**
+- ROCm 6.2.4 with RX 7900 XT
+- ROCm 7.0.1 with RX 7900 XT
 
-**Verified Models:**
-- Whisper (all sizes) via faster-whisper
-- BERT, DistilBERT
+**Models that work:**
+- Whisper (all sizes) through faster-whisper
+- BERT and DistilBERT
 - GPT-2, Llama, Mistral
-- T5, BART
+- T5 and BART
 
 ---
 
 ## About CTranslate2
 
-CTranslate2 is a C++ and Python library for efficient inference with Transformer models. It implements a custom runtime that applies many performance optimization techniques:
+CTranslate2 is a library focused on fast inference for Transformer models. It does a lot of optimization work under the hood: weights quantization (FP16, BF16, INT8, INT4), layer fusion, smart batching, and efficient memory management.
 
-**Core Features:**
-- Weights quantization: FP16, BF16, INT16, INT8, AWQ (INT4)
-- Layer fusion and padding removal
-- Batch reordering and in-place operations
-- Dynamic memory usage with caching allocators
-- Parallel and asynchronous execution
+It supports pretty much every common Transformer architecture: encoder-decoder models (Transformer, BART, T5, Whisper), decoder-only models (GPT-2, Llama, Mistral, Gemma, Qwen2), and encoder-only models (BERT).
 
-**Supported Model Types:**
-- **Encoder-decoder:** Transformer, M2M-100, NLLB, BART, mBART, Pegasus, T5, Whisper
-- **Decoder-only:** GPT-2, GPT-J, GPT-NeoX, OPT, BLOOM, MPT, Llama, Mistral, Gemma, CodeGen, Falcon, Qwen2
-- **Encoder-only:** BERT, DistilBERT, XLM-RoBERTa
-
-For complete CTranslate2 documentation, see [opennmt.net/CTranslate2](https://opennmt.net/CTranslate2/).
+Full docs at [opennmt.net/CTranslate2](https://opennmt.net/CTranslate2/).
 
 ---
 
 ## License
 
-This project maintains the same MIT License as the upstream [OpenNMT/CTranslate2](https://github.com/OpenNMT/CTranslate2).
+MIT License, same as the upstream OpenNMT project.
