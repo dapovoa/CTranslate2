@@ -1,32 +1,49 @@
-[![CI](https://github.com/dapovoa/CTranslate2/workflows/CI/badge.svg)](https://github.com/dapovoa/CTranslate2/actions?query=workflow%3ACI) [![PyPI version](https://badge.fury.io/py/ctranslate2.svg)](https://badge.fury.io/py/ctranslate2) [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://opennmt.net/CTranslate2/) [![Gitter](https://badges.gitter.im/OpenNMT/CTranslate2.svg)](https://gitter.im/OpenNMT/CTranslate2?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Forum](https://img.shields.io/discourse/status?server=https%3A%2F%2Fforum.opennmt.net%2F)](https://forum.opennmt.net/) [![ROCm](https://img.shields.io/badge/ROCm-6.3.0-red.svg)](BUILD_ROCM.md) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/dapovoa/CTranslate2/workflows/CI/badge.svg)](https://github.com/dapovoa/CTranslate2/actions?query=workflow%3ACI) [![PyPI version](https://badge.fury.io/py/ctranslate2.svg)](https://badge.fury.io/py/ctranslate2) [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://opennmt.net/CTranslate2/) [![Gitter](https://badges.gitter.im/OpenNMT/CTranslate2.svg)](https://gitter.im/OpenNMT/CTranslate2?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Forum](https://img.shields.io/discourse/status?server=https%3A%2F%2Fforum.opennmt.net%2F)](https://forum.opennmt.net/) [![ROCm](https://img.shields.io/badge/ROCm-6.3.1-red.svg)](BUILD_ROCM.md) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # CTranslate2 for AMD ROCm
 
-This is a fork of [OpenNMT/CTranslate2](https://github.com/OpenNMT/CTranslate2) focused on providing robust and optimized support for AMD GPUs using the ROCm platform.
+This is a fork of [OpenNMT/CTranslate2](https://github.com/OpenNMT/CTranslate2) and [ROCm/CTranslate2](https://github.com/ROCm/CTranslate2) providing optimized support for AMD GPUs using the ROCm platform.
 
-If you've ever wanted to run large Transformer models like Whisper on your AMD hardware, you're in the right place. This port is designed to be performant, up-to-date, and easy to use.
+**Latest Release:** [v4.6.0-rocm6.3.1](https://github.com/dapovoa/CTranslate2/releases/tag/v4.6.0-rocm6.3.1) - CTranslate2 v4.6.0 with GPU-only build, ROCm 6.3.1 compatibility, and full MIOpen support for Whisper models.
 
-## What's Special About This Fork?
+## What's New in v4.6.0-rocm6.3.1
 
-This isn't just a simple recompile. It includes several key improvements to make the experience on ROCm smooth and efficient.
+*   **GPU-only build** - Disabled CPU dispatch kernels for cleaner GPU-focused implementation
+*   **Build script verification** - Automated checks for GPU-only configuration
+*   **Improved CMake configuration** - Enhanced GPU-only enforcement
+*   **ROCm 6.3.1 compatibility** - Tested on ROCm 6.3.1 with gfx1100
+*   **MIOpen integration** - Full Conv1D support for Whisper and speech models
+*   **Faster-Whisper support** - Compatible with `faster-whisper` Python package
+
+## Key Features
 
 *   **Modern ROCm Support (6.2+ and 7.x)**
-    *   The official AMD fork targets ROCm 6.1. This version is updated to work with modern ROCm releases, handling API changes automatically at compile time.
+    *   Updated to work with ROCm 6.2.4, 6.3.x, and 7.0.1, handling API changes automatically at compile time.
 
-*   **Whisper Models Actually Work**
-    *   A common issue with other forks was the `"Conv1D on GPU currently requires the cuDNN library"` error when running Whisper models. This is fixed by properly linking to MIOpen, AMD's equivalent of cuDNN.
+*   **Whisper Models Work Out-of-the-Box**
+    *   Fixed the common `"Conv1D on GPU currently requires the cuDNN library"` error by properly linking to MIOpen (AMD's equivalent of cuDNN).
 
 *   **GPU-Only for Peak Performance**
-    *   This build is intentionally **GPU-only**. CPU backends are disabled to maximize performance for real-time inference, where every millisecond counts. For CPU-based tasks, the official CTranslate2 package is still your best bet.
+    *   This build is intentionally **GPU-only**. CPU dispatch kernels are disabled to maximize performance for real-time inference. For CPU-based tasks, use the official CTranslate2 package.
 
-*   **Automated Builds**
+*   **Automated Build Script**
     *   The included `build_rocm.sh` script handles the entire build process, from detecting your GPU architecture to creating a Python wheel.
 
 ## Getting Started
 
 ### Using Pre-Built Wheels (Recommended)
 
-The easiest way to get started is to download a pre-compiled wheel from the [Releases](https://github.com/dapovoa/CTranslate2/releases) page. These are available for recent ROCm versions.
+Download the latest wheel from the [Releases](https://github.com/dapovoa/CTranslate2/releases) page:
+
+```bash
+pip install ctranslate2-4.6.0+rocm6.3.1-cp312-cp312-linux_x86_64.whl
+```
+
+**Requirements:**
+- ROCm 6.3.1 (tested on gfx1100)
+- AMD Radeon RX 7900 XTX or compatible RDNA3 GPU
+- Python 3.12
+- Ubuntu 24.04 LTS (or compatible)
 
 ### Building from Source
 
@@ -48,8 +65,8 @@ If you need to build for a specific configuration, you can build from source.
 
 This fork has been tested on the following configurations:
 
-*   **ROCm 6.2.4 & 7.0.1:** AMD Radeon RX 7900 XT (gfx1100)
-*   **ROCm 6.3.0:** AMD Radeon RX 7900 XTX (gfx1100)
+*   **Primary:** ROCm 6.3.1 on AMD Radeon RX 7900 XTX (gfx1100), Ubuntu 24.04 LTS, Python 3.12
+*   **Also tested:** ROCm 6.2.4 and 7.0.1 on AMD Radeon RX 7900 XT (gfx1100)
 
 ---
 
