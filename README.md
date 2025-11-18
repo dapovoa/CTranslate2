@@ -1,4 +1,4 @@
-[![CI](https://github.com/dapovoa/CTranslate2/workflows/CI/badge.svg)](https://github.com/dapovoa/CTranslate2/actions?query=workflow%3ACI) [![Release](https://img.shields.io/github/v/release/dapovoa/CTranslate2)](https://github.com/dapovoa/CTranslate2/releases/latest) [![ROCm](https://img.shields.io/badge/ROCm-6.3.1-red.svg)](BUILD_ROCM.md) [![CTranslate2](https://img.shields.io/badge/CTranslate2-v4.6.0-blue.svg)](https://github.com/OpenNMT/CTranslate2) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/dapovoa/CTranslate2)](https://github.com/dapovoa/CTranslate2/releases/latest) [![ROCm](https://img.shields.io/badge/ROCm-6.3.1-red.svg)](BUILD_ROCM.md) [![CTranslate2](https://img.shields.io/badge/CTranslate2-v4.6.0-blue.svg)](https://github.com/OpenNMT/CTranslate2) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 # CTranslate2 - AMD ROCm Fork
 
