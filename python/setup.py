@@ -25,7 +25,12 @@ def _get_project_version():
     version = {}
     with open(version_path, encoding="utf-8") as fp:
         exec(fp.read(), version)
-    return version["__version__"]
+    project_version = version["__version__"]
+    local_version = os.environ.get("CT2_LOCAL_VERSION", "").strip()
+    if local_version:
+        # PEP 440 local version segment, e.g. 4.6.0+rocm7.0
+        project_version = f"{project_version}+{local_version}"
+    return project_version
 
 
 def _maybe_add_library_root(lib_name):

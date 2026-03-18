@@ -31,7 +31,8 @@
         return hip_bfloat16(fmaxf(float(a), float(b)));
     }
 
-    // hipcub FpLimits -> NumericTraits compatibility wrapper
+    // hipcub FpLimits -> NumericTraits compatibility wrapper for ROCm < 7.
+    #if HIP_VERSION < 70000000
     namespace hipcub {
         template <typename T>
         struct FpLimits {
@@ -43,4 +44,5 @@
             }
         };
     }
+    #endif
 #endif

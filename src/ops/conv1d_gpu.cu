@@ -112,10 +112,8 @@ namespace ctranslate2 {
                                                  conv_desc,
                                                  output_desc,
                                                  &count));
-        if(count <1){
-                std::cout<<"count: "<<count<<std::endl;
-                return;
-        }
+        if (count < 1)
+          throw std::runtime_error("MIOpen returned no convolution forward solutions");
         auto solutions = std::vector<miopenConvSolution_t>(count);
         CUDNN_CHECK(miopenConvolutionForwardGetSolution(handle,
                                              weight_desc,

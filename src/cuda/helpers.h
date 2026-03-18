@@ -5,10 +5,20 @@
 #ifdef __HIP_PLATFORM_AMD__
   #include<cuda2hip_macros.hpp>
   #include<cuda2hip_device.hpp>
+  #include <thrust/system/hip/execution_policy.h>
 #else
   #include <cuda_fp16.h>
   #include <cuda_bf16.h>
+  #include <thrust/execution_policy.h>
 #endif
+#include <thrust/copy.h>
+#include <thrust/extrema.h>
+#include <thrust/fill.h>
+#include <thrust/reduce.h>
+#include <thrust/transform.h>
+#include <thrust/iterator/counting_iterator.h>
+#include <thrust/iterator/permutation_iterator.h>
+#include <thrust/iterator/transform_iterator.h>
 #include "ctranslate2/types.h"
 
 #include "utils.h"
