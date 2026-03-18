@@ -4,9 +4,9 @@
 
 set -e  # Exit on error
 
-# Add ROCm to PATH
-export PATH=/opt/rocm/bin:/opt/rocm-6.3.0/bin:$PATH
+# Add ROCm to PATH (generic installation path)
 export ROCM_PATH=/opt/rocm
+export PATH="${ROCM_PATH}/bin:${PATH}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -101,7 +101,7 @@ build_library() {
     echo -e "${YELLOW}Building CTranslate2 library...${NC}"
 
     cd build
-    make -j28
+    make -j"$(nproc)"
 
     # Verify MIOpen linkage
     if ldd libctranslate2.so | grep -q "libMIOpen"; then
