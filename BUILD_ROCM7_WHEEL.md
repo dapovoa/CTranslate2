@@ -38,3 +38,13 @@ Saida esperada:
 ```text
 dist/ctranslate2-4.6.0+rocm7.0-cp312-cp312-linux_x86_64.whl
 ```
+
+Se aparecer erro de import tipo `libhipblas.so.2 not found`, atualiza a lib do sistema para ROCm 7:
+
+```bash
+cd /home/dapovoa/github/CTranslate2
+sudo cp build-rocm7-wheel/libctranslate2.so.4.6.0 /usr/local/lib/
+sudo ln -sf /usr/local/lib/libctranslate2.so.4.6.0 /usr/local/lib/libctranslate2.so.4
+sudo ln -sf /usr/local/lib/libctranslate2.so.4 /usr/local/lib/libctranslate2.so
+sudo ldconfig
+```

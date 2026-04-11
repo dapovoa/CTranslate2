@@ -11,3 +11,4 @@ python/dist/
 .cache
 docs/build/
 docs/python/
+build-rocm7-wheel/
